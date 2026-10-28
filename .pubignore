@@ -1,0 +1,14 @@
+# .pubignore replaces .gitignore for the published archive, so the
+# .gitignore rules that matter are repeated here.
+.dart_tool/
+build/
+coverage/
+graft/
+*.iml
+.idea/
+.DS_Store
+/pubspec.lock
+# Not part of the package: the benchmark app and planning docs (pub also
+# asks for "doc", not "docs", for published docs).
+benchmark/
+docs/
