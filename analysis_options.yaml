@@ -1,0 +1,42 @@
+# Strict analysis shared by the package, example/ and benchmark/ (DRY: they
+# include this file and only relax public_member_api_docs).
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  errors:
+    missing_required_param: error
+    missing_return: error
+    todo: ignore
+  exclude:
+    - build/**
+    - docs/**
+    - example/**
+    - benchmark/**
+
+linter:
+  rules:
+    - always_declare_return_types
+    - annotate_overrides
+    - avoid_dynamic_calls
+    - avoid_print
+    - avoid_redundant_argument_values
+    - avoid_void_async
+    - cancel_subscriptions
+    - directives_ordering
+    - only_throw_errors
+    - prefer_const_constructors
+    - prefer_const_declarations
+    - prefer_final_fields
+    - prefer_final_in_for_each
+    - prefer_final_locals
+    - prefer_single_quotes
+    - public_member_api_docs
+    - type_annotate_public_apis
+    - unawaited_futures
+    - unnecessary_lambdas
+    - unnecessary_statements
+    - use_super_parameters

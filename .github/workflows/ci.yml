@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  package:
+    name: Package (Flutter ${{ matrix.flutter-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        flutter-version: ['3.24.0', 'stable']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ matrix.flutter-version }}
+          cache: true
+
+      - name: flutter pub get
+        run: flutter pub get
+
+      # The tall formatter (Dart 3.7+) is the reference style; older SDKs
+      # format differently, so style and score checks run on stable only.
+      - name: dart format check
+        if: matrix.flutter-version == 'stable'
+        run: >-
+          dart format --output=none --set-exit-if-changed
+          lib test example/lib example/test
+
+      - name: flutter analyze (strict)
+        if: matrix.flutter-version == 'stable'
+        run: flutter analyze --fatal-infos
+
+      # Lint names newer than the floor SDK are reported as unknown there, so
+      # the floor job fails only on errors.
+      - name: flutter analyze (floor SDK, errors only)
+        if: matrix.flutter-version != 'stable'
+        run: flutter analyze --no-fatal-warnings --no-fatal-infos
+
+      - name: flutter test with coverage
+        run: flutter test --coverage
+
+      - name: core coverage gate (85%)
+        run: dart run tool/check_coverage.dart coverage/lcov.info lib/src/core 85
+
+      - name: dart pub publish dry run
+        if: matrix.flutter-version == 'stable'
+        run: dart pub publish --dry-run
+
+      - name: pana score floor (150/160 until release)
+        if: matrix.flutter-version == 'stable'
+        run: |
+          dart pub global activate pana
+          export PATH="$PATH:$HOME/.pub-cache/bin"
+          pana --exit-code-threshold 10 .
+
+  example:
+    name: Example app (Flutter ${{ matrix.flutter-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        flutter-version: ['3.24.0', 'stable']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ matrix.flutter-version }}
+          cache: true
+
+      - name: flutter pub get (example)
+        working-directory: example
+        run: flutter pub get
+
+      - name: flutter analyze (example)
+        working-directory: example
+        run: >-
+          flutter analyze ${{ matrix.flutter-version == 'stable'
+          && '--fatal-infos' || '--no-fatal-warnings --no-fatal-infos' }}
+
+      - name: flutter test (example)
+        working-directory: example
+        run: flutter test
+
+  benchmark:
+    name: Benchmark harness (analyze and headless run)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: flutter pub get (benchmark)
+        working-directory: benchmark
+        run: flutter pub get
+
+      - name: flutter analyze (benchmark)
+        working-directory: benchmark
+        run: flutter analyze --fatal-infos
+
+      - name: headless benchmark (debug, relative numbers only)
+        working-directory: benchmark
+        run: flutter test

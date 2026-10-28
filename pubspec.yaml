@@ -1,0 +1,31 @@
+name: scroll_atlas
+description: >-
+  Precise scrolling for Flutter. Jump to any index in any sliver, below pinned
+  and sticky headers, sync tabs with the scroll, and link scroll controllers.
+version: 0.1.0-dev.1
+environment:
+  sdk: ^3.5.0
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+  flutter_test:
+    sdk: flutter
+
+topics:
+  - scrolling
+  - listview
+  - sliver
+  - widget
+  - ui
+
+screenshots:
+  - description: "scroll_atlas: scroll to index, sticky-aware jumps, linked controllers and synced tabs."
+    path: assets/hero.png
+  - description: "Jump to a contact below a pinned app bar and a sticky section header."
+    path: assets/banner.png
+
