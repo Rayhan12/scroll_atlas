@@ -8,7 +8,6 @@ graft/
 .idea/
 .DS_Store
 /pubspec.lock
-# Not part of the package: the benchmark app and planning docs (pub also
-# asks for "doc", not "docs", for published docs).
+# Not part of the package: the benchmark app and local notes.
 benchmark/
 docs/

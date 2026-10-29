@@ -1,6 +1,12 @@
-# scroll_atlas_example
+# scroll_atlas example
 
-Demo app for scroll_atlas. The home screen lists the demo screens. The Jump lab runs on the prototype engine; the other demos are still being built.
+A gallery of five demos. Each one states the problem, what breaks with a plain `ListView`, and what scroll_atlas fixes:
+
+- **Food menu**: tabs that follow a long menu and jump to a section in one move.
+- **Contacts**: jump to any contact below a pinned app bar and sticky letter headers.
+- **Chat**: open at the first unread message and jump to the message a reply quotes.
+- **Room bookings**: a table with a frozen header row and first column that scrolls diagonally.
+- **Jump lab**: jump or animate anywhere in 100,000 items of unknown height.
 
 ```
 flutter run

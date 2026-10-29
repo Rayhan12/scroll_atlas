@@ -1,5 +1,6 @@
-# Builds the example app for the web and publishes it to GitHub
-# Pages on every release tag. Enable Pages with "GitHub Actions" as the
+# Builds the example app for the web and publishes it to GitHub Pages on
+# every release tag. Enable Pages with "GitHub Actions" as the source in the
+# repository settings first.
 name: Demo on GitHub Pages
 
 on:

@@ -1,5 +1,5 @@
 name: scroll_atlas_example
-description: "Demo app for scroll_atlas: one screen per demo D1 to D6."
+description: "Demo app for scroll_atlas: a gallery of scrolling demos."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev

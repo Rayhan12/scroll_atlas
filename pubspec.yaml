@@ -3,6 +3,7 @@ description: >-
   Precise scrolling for Flutter. Jump to any index in any sliver, below pinned
   and sticky headers, sync tabs with the scroll, and link scroll controllers.
 version: 0.2.0-dev.1
+
 environment:
   sdk: ^3.5.0
   flutter: ">=3.24.0"

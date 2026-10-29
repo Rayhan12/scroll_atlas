@@ -1,8 +1,6 @@
 <!--
-  Images: GitHub renders the relative paths below. pub.dev does not reliably resolve
-  relative image paths, so before `dart pub publish` replace each
-  `assets/...` image path with the absolute raw URL, for example:
-  https://raw.githubusercontent.com/Rayhan12/scroll_atlas/main/assets/hero.png
+  pub.dev may not resolve relative image paths. Before publishing, replace each
+  `assets/...` path with its raw.githubusercontent.com URL on the main branch.
 -->
 
 <p align="center">
@@ -20,10 +18,9 @@
   <a href="https://pub.dev/packages/scroll_atlas/score"><img src="https://img.shields.io/pub/likes/scroll_atlas" alt="pub likes"></a>
   <a href="https://pub.dev/packages/scroll_atlas/score"><img src="https://img.shields.io/pub/points/scroll_atlas" alt="pub points"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license"></a>
-  <!-- <a href="https://github.com/Rayhan12/scroll_atlas/actions/workflows/ci.yml"><img src="https://github.com/Rayhan12/scroll_atlas/actions/workflows/ci.yml/badge.svg" alt="CI"></a> -->
 </p>
 
-> **Status: release candidate, not published yet.** All features below are built and tested. The pub badges stay empty until the first release.
+> **Status: preview, not published yet.** All features below are built and tested. The pub badges stay empty until the first release.
 
 ## Features
 
@@ -33,11 +30,10 @@
 - **Sticky sections.** `SliverAtlasSection` gives you sticky headers that know when they are stuck.
 - **Visible items.** `positions` reports which items are on screen and how much of each.
 - **Scroll-synced tabs.** `AtlasTabBar` follows the scroll and scrolls on tap, without the indicator flickering through every tab.
-- **Linked scrollables.** `LinkedScrollGroup` keeps header rows, frozen columns and carousels aligned during flings.
+- **Linked scrollables.** `LinkedScrollGroup` keeps header rows and frozen columns aligned during flings, and `LinkedTable` scrolls diagonally with both headers in line.
 - **Stable while content changes.** Inserting items above, or images loading above, does not move what the user is reading.
 - **Drop-in migration.** `package:scroll_atlas/compat.dart` keeps the class names of `scrollable_positioned_list` and `linked_scroll_controller`.
 
-Live demo (Flutter web, published from each release tag by `.github/workflows/pages.yml`): https://Rayhan12.github.io/scroll_atlas/. Each screen has a deep link, such as `#/d4` for the food menu.
 
 | D2 Contacts | D3 Timetable | D4 Food menu | D6 Chat |
 |---|---|---|---|
@@ -55,7 +51,7 @@ Or in `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  scroll_atlas: ^0.1.0
+  scroll_atlas: ^0.2.0-dev.1
 ```
 
 ## Quick start
@@ -184,7 +180,7 @@ final body = group.createController();
 
 Only the scroll view under the finger drives; the others follow in the same frame, so flings never fight and nobody overshoots. A controller created after the group has moved starts at the group's offset, and disposing one member leaves the others scrolling. `group.jumpTo`, `group.animateTo` and `group.addOffsetListener` work on all members at once. Call `group.dispose()` after the controllers.
 
-`LinkedTable` is a recipe built on two groups: a frozen header row and first column over a lazily built body.
+`LinkedTable` is built on two groups: a frozen header row and first column over a lazily built body that scrolls in both directions at once. Pass `diagonalDragBehavior: DiagonalDragBehavior.none` to lock each drag to one axis.
 
 ```dart
 LinkedTable(
@@ -198,32 +194,17 @@ LinkedTable(
 
 ## Migrating from scrollable_positioned_list
 
-**Step 1.** Swap the dependency:
+Swap the dependency and the import. The class names stay the same:
 
 ```diff
- dependencies:
 -  scrollable_positioned_list: ^0.3.8
-+  scroll_atlas: ^0.9.0
-```
++  scroll_atlas: ^0.2.0-dev.1
 
-**Step 2.** Change the import. Your code keeps compiling with the same class names:
-
-```diff
 -import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 +import 'package:scroll_atlas/compat.dart';
 ```
 
-**Step 3 (optional).** Move to the new API screen by screen:
-
-| scrollable_positioned_list | scroll_atlas |
-|---|---|
-| `ScrollablePositionedList.builder(...)` | `AtlasListView.builder(...)` |
-| `ItemScrollController.jumpTo(index: i)` | `AtlasController.jumpTo(index: i)` |
-| `ItemScrollController.scrollTo(index: i, duration: d)` | `AtlasController.animateTo(index: i, duration: d)` |
-| `ItemPositionsListener.itemPositions` | `AtlasController.positions` |
-| `ScrollOffsetController.animateScroll(offset: o, duration: d)` | `AtlasController.animateBy(offset: o, duration: d)` |
-
-From `linked_scroll_controller`: `LinkedScrollControllerGroup` is also in `compat.dart`, and its new name is `LinkedScrollGroup` (`addAndGet()` becomes `createController()`).
+`LinkedScrollControllerGroup` from linked_scroll_controller is in `compat.dart` too. Two differences: `scrollTo` glides to the target instead of cross fading, and `shrinkWrap: true` is not supported.
 
 ## How it compares
 
@@ -245,11 +226,11 @@ What the other packages' own docs say:
 
 scroll_atlas aims to combine id-based targets, sticky-aware alignment, scroll-synced tabs, linked controllers and a drop-in layer for the two archived Google packages in one maintained package. Speed comparisons will appear here only after they are measured with the benchmark app on real devices, with links to the raw results.
 
-Progress so far (headless test runs and an iOS simulator in debug mode, not real devices yet): `AtlasListView` lands every jump in one frame within 0.5 px while building at most 16 items, animates across 80,000 items without a snap at the end (last frame move 0.11 px headless, 1.73 px on the iOS simulator), and keeps the item you are reading still when 20 items are inserted above it. Across 26 sticky sections under a pinned bar, 500 of 500 jumps land in one frame with no target hidden under a header (B4, headless). Tapping a tab moves the indicator exactly once (widget tests). A 1,000 x 50 linked table keeps its header row, first column and rows within 0 px of each other on every frame of 24 two-finger diagonal flings (B5, headless). Tables and raw files: [`benchmark/README.md`](benchmark/README.md).
+Measured so far (headless test runs and an iOS simulator in debug mode, not real devices yet): `AtlasListView` lands every jump in one frame within 0.5 px while building at most 16 items, animates across 80,000 items without a snap at the end (last frame move 0.11 px headless, 1.73 px on the iOS simulator), and keeps the item you are reading still when 20 items are inserted above it. Across 26 sticky sections under a pinned bar, 500 of 500 jumps land in one frame with no target hidden under a header. A 1,000 x 50 `LinkedTable` keeps its headers and body within 0 px of each other on every frame of 24 two-finger diagonal flings. Details: [`benchmark/README.md`](benchmark/README.md).
 
 ## Example app
 
-The `example/` app has six screens: Jump lab (100,000 items), Contacts A to Z with sticky headers, Timetable with a frozen header and column, Food menu with synced tabs, Migration before and after, and Chat with jump to reply.
+The `example/` app opens on a gallery of five demos: a food menu with tabs that follow the sections, contacts A to Z with sticky headers, a chat that opens at the first unread message, a room booking table with a frozen header row and column, and a jump lab with 100,000 items. Each demo says what breaks with a plain `ListView` and what scroll_atlas fixes.
 
 ## Contributing
 

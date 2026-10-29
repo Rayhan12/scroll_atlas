@@ -106,6 +106,6 @@ jobs:
         working-directory: benchmark
         run: flutter analyze --fatal-infos
 
-      - name: headless benchmark (debug, relative numbers only)
+      - name: headless benchmarks (debug, relative numbers only)
         working-directory: benchmark
         run: flutter test

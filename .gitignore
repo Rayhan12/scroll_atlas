@@ -35,3 +35,8 @@ coverage/
 
 # Local tool cache found in the folder (not part of the package)
 graft/
+
+# Local notes and benchmark output (kept on disk, not committed)
+/docs/
+/MIGRATION.md
+/benchmark/results/
