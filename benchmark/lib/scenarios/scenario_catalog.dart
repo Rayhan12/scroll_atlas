@@ -1,8 +1,9 @@
+import 'insert_while_reading_scenario.dart';
 import 'jump_storm_scenario.dart';
 import 'long_animate_scenario.dart';
 import 'scenario.dart';
 
-/// B1 to B6. B3 to B6 land with the features that add the
+/// B1 to B6. B3 to B5 land with the features that add the
 /// features they measure.
 List<Scenario> scenarioCatalog() => <Scenario>[
   JumpStormScenario(),
@@ -22,5 +23,5 @@ List<Scenario> scenarioCatalog() => <Scenario>[
     'linked 1,000 x 50 table, diagonal flings',
     'a later version',
   ),
-  const PlannedScenario('B6', 'insert 20 items at top while reading', 'S1'),
+  InsertWhileReadingScenario(),
 ];

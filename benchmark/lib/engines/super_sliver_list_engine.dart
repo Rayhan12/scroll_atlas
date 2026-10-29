@@ -20,11 +20,13 @@ final class SuperSliverListEngine
   Widget buildList({
     required int itemCount,
     required IndexedWidgetBuilder itemBuilder,
+    ChildIndexGetter? findChildIndexCallback,
   }) => SuperListView.builder(
     controller: _scroll,
     listController: _list,
     itemCount: itemCount,
     itemBuilder: itemBuilder,
+    findChildIndexCallback: findChildIndexCallback,
   );
 
   @override

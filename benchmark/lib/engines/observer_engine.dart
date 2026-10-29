@@ -29,12 +29,14 @@ final class ObserverEngine
   Widget buildList({
     required int itemCount,
     required IndexedWidgetBuilder itemBuilder,
+    ChildIndexGetter? findChildIndexCallback,
   }) => ListViewObserver(
     controller: _observer,
     child: ListView.builder(
       controller: _scroll,
       itemCount: itemCount,
       itemBuilder: itemBuilder,
+      findChildIndexCallback: findChildIndexCallback,
     ),
   );
 

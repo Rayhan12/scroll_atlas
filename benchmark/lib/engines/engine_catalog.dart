@@ -1,6 +1,7 @@
 import 'package:scroll_atlas/experimental.dart';
 import 'package:scroll_atlas/scroll_atlas.dart';
 
+import 'atlas_engine.dart';
 import 'observer_engine.dart';
 import 'plain_list_view_engine.dart';
 import 'positioned_list_engine.dart';
@@ -12,6 +13,7 @@ typedef EngineFactory = ListEngine Function();
 /// Every engine the benchmark compares. Adding an engine means adding one
 /// line here; scenarios never name concrete engines (open/closed).
 const List<EngineFactory> engineCatalog = <EngineFactory>[
+  AtlasEngine.new,
   PrototypeScrollEngine.new,
   SuperSliverListEngine.new,
   PositionedListEngine.new,

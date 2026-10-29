@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'chat/chat_screen.dart';
 import 'jump_lab/jump_lab_screen.dart';
 import 'placeholder_demo_screen.dart';
 
@@ -84,7 +85,7 @@ final List<DemoScreenSpec> demoCatalog = <DemoScreenSpec>[
         'messages',
     whatToTry: 'Open; tap a reply; send a message',
     tickets: '',
-    builder: _placeholderBuilder('D6'),
+    builder: (BuildContext context) => const ChatScreen(),
   ),
 ];
 

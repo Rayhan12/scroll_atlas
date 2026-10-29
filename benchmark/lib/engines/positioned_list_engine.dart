@@ -13,6 +13,8 @@ final class PositionedListEngine implements IndexedScrollEngine {
   Widget buildList({
     required int itemCount,
     required IndexedWidgetBuilder itemBuilder,
+    // scrollable_positioned_list 0.3.8 has no findChildIndexCallback.
+    ChildIndexGetter? findChildIndexCallback,
   }) => ScrollablePositionedList.builder(
     itemScrollController: _controller,
     itemCount: itemCount,

@@ -1,8 +1,10 @@
 // Benchmark measurements, headless under flutter_test.
 //
 // Run: cd benchmark && flutter test test/headless_benchmark_test.dart
+//   [--dart-define=SA_RUN_NAME=flutter_test-s1]
 //
-// Writes results/flutter_test-<date>.json and results/flutter_test-<date>.md.
+// Writes results/<name>-<date>.json and results/<name>-<date>.md, where
+// <name> defaults to flutter_test. Pass a name to keep earlier runs.
 // Accuracy, frames to settle and items built are deterministic here. Wall
 // times are debug-mode JIT numbers on the host CPU: compare them only with
 // each other, never with device profile numbers.
@@ -13,6 +15,12 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:scroll_atlas_benchmark/benchmark_runner.dart';
 import 'package:scroll_atlas_benchmark/results/markdown_report.dart';
+
+/// File name prefix for this run's results.
+const String _runName = String.fromEnvironment(
+  'SA_RUN_NAME',
+  defaultValue: 'flutter_test',
+);
 
 void main() {
   testWidgets('B1 and B2 for every engine', (tester) async {
@@ -33,13 +41,14 @@ void main() {
       log: (m) => debugPrint('running $m'),
     );
     final date = run.environment['date'];
+    final file = 'results/$_runName-$date';
     final results = run.results;
     Directory('results').createSync(recursive: true);
-    File('results/flutter_test-$date.json').writeAsStringSync(
+    File('$file.json').writeAsStringSync(
       const JsonEncoder.withIndent('  ').convert(run.toJson()),
     );
     final table = MarkdownReport.tables(run);
-    File('results/flutter_test-$date.md').writeAsStringSync(table);
+    File('$file.md').writeAsStringSync(table);
     debugPrint(table);
 
     final prototype = results.where(

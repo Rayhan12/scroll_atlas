@@ -28,7 +28,12 @@ final class ScenarioContext {
   static const Duration frame = Duration(milliseconds: 16);
 
   /// Pumps the engine's list of [extents] fixture items.
-  Future<void> mount() => tester.pumpWidget(
+  ///
+  /// With [insertedAtTop] above 0, that many extra items with ids -1, -2, and
+  /// so on sit before item 0, newest first. Item ids stay stable, and the
+  /// list gets a `findChildIndexCallback`, so engines that support it keep
+  /// built items when items are inserted (B6).
+  Future<void> mount({int insertedAtTop = 0}) => tester.pumpWidget(
     Directionality(
       textDirection: TextDirection.ltr,
       child: PageStorage(
@@ -36,16 +41,25 @@ final class ScenarioContext {
         child: KeyedSubtree(
           key: probe.hostKey,
           child: engine.buildList(
-            itemCount: extents.length,
-            itemBuilder: counter.wrap(
-              (context, index) =>
-                  FixtureItem(index: index, extent: extents[index]),
-            ),
+            itemCount: extents.length + insertedAtTop,
+            itemBuilder: counter.wrap((context, index) {
+              final id = index - insertedAtTop;
+              return FixtureItem(index: id, extent: extentOf(id));
+            }),
+            findChildIndexCallback: (key) {
+              final id = FixtureKeys.idOf(key);
+              final index = id == null ? null : id + insertedAtTop;
+              return index == null || index < 0 ? null : index;
+            },
           ),
         ),
       ),
     ),
   );
+
+  /// Extent of the item with [id]; inserted items (negative ids) reuse the
+  /// seeded extents from the start of the list.
+  double extentOf(int id) => extents[id < 0 ? (-id) % extents.length : id];
 
   Future<void> nextFrame() => tester.pump(frame);
 

@@ -44,8 +44,8 @@ jobs:
       - name: flutter test with coverage
         run: flutter test --coverage
 
-      - name: core coverage gate (85%)
-        run: dart run tool/check_coverage.dart coverage/lcov.info lib/src/core 85
+      - name: core coverage gate (100%)
+        run: dart run tool/check_coverage.dart coverage/lcov.info lib/src/core 100
 
       - name: dart pub publish dry run
         if: matrix.flutter-version == 'stable'

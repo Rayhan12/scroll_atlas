@@ -35,6 +35,7 @@ final class PrototypeScrollEngine implements IndexedScrollEngine {
   Widget buildList({
     required int itemCount,
     required IndexedWidgetBuilder itemBuilder,
+    ChildIndexGetter? findChildIndexCallback,
   }) =>
       CustomScrollView(
         controller: controller,
@@ -43,6 +44,7 @@ final class PrototypeScrollEngine implements IndexedScrollEngine {
             delegate: SliverChildBuilderDelegate(
               itemBuilder,
               childCount: itemCount,
+              findChildIndexCallback: findChildIndexCallback,
             ),
             cache: _cache,
             anchors: _anchors,

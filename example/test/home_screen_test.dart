@@ -34,7 +34,52 @@ void main() {
     // A far jump builds about one screen of items, never the skipped range.
     final readout =
         tester.widget<Text>(find.textContaining('Builds on last jump')).data!;
-    final builds = int.parse(readout.split(': ').last);
+    final match = RegExp(r'Builds on last jump: (\d+)').firstMatch(readout)!;
+    final builds = int.parse(match.group(1)!);
     expect(builds, inInclusiveRange(1, 40));
+  });
+
+  Future<double> openAt500(WidgetTester tester) async {
+    await tester.pumpWidget(const ScrollAtlasDemoApp());
+    await tester.tap(find.textContaining('D1 Jump lab'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('jump_index_field')), '500');
+    await tester.tap(find.byKey(const Key('jump_button')));
+    await tester.pumpAndSettle();
+    return tester.getTopLeft(find.text('Item 500')).dy;
+  }
+
+  testWidgets('D1 insert 20 at top keeps the reading position',
+      (WidgetTester tester) async {
+    final before = await openAt500(tester);
+    await tester.ensureVisible(find.byKey(const Key('insert_button')));
+    await tester.tap(find.byKey(const Key('insert_button')));
+    await tester.pumpAndSettle();
+    final after = tester.getTopLeft(find.text('Item 500')).dy;
+    expect(after, moreOrLessEquals(before, epsilon: 0.5));
+  });
+
+  testWidgets('D1 growing images above does not move the view',
+      (WidgetTester tester) async {
+    final before = await openAt500(tester);
+    await tester.ensureVisible(find.byKey(const Key('grow_button')));
+    await tester.tap(find.byKey(const Key('grow_button')));
+    await tester.pumpAndSettle();
+    final after = tester.getTopLeft(find.text('Item 500')).dy;
+    expect(after, moreOrLessEquals(before, epsilon: 0.5));
+  });
+
+  testWidgets('D6 opens the chat at the first unread message',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const ScrollAtlasDemoApp());
+    final scrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(
+      find.textContaining('D6 Chat'),
+      500,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.textContaining('D6 Chat'));
+    await tester.pumpAndSettle();
+    expect(find.text('First unread'), findsOneWidget);
   });
 }

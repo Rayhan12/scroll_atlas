@@ -14,10 +14,12 @@ final class PlainListViewEngine implements ListEngine {
   Widget buildList({
     required int itemCount,
     required IndexedWidgetBuilder itemBuilder,
+    ChildIndexGetter? findChildIndexCallback,
   }) => ListView.builder(
     controller: controller,
     itemCount: itemCount,
     itemBuilder: itemBuilder,
+    findChildIndexCallback: findChildIndexCallback,
   );
 
   @override

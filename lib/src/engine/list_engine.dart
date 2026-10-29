@@ -9,9 +9,14 @@ abstract interface class ListEngine {
   String get id;
 
   /// Builds the scrollable list.
+  ///
+  /// [findChildIndexCallback] maps an item key to its current index, so an
+  /// engine can keep the state and position of keyed items when items are
+  /// inserted or removed. Engines whose package has no such hook ignore it.
   Widget buildList({
     required int itemCount,
     required IndexedWidgetBuilder itemBuilder,
+    ChildIndexGetter? findChildIndexCallback,
   });
 
   /// Releases controllers.

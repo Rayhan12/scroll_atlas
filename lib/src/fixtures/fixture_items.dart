@@ -5,6 +5,15 @@ import 'package:flutter/widgets.dart';
 abstract final class FixtureKeys {
   /// Key of the fixture item at [index].
   static Key item(int index) => ValueKey<String>('atlas-item-$index');
+
+  /// Index [item] was created with, or null for any other key.
+  static int? idOf(Key key) {
+    if (key is! ValueKey<String>) return null;
+    const prefix = 'atlas-item-';
+    final value = key.value;
+    if (!value.startsWith(prefix)) return null;
+    return int.tryParse(value.substring(prefix.length));
+  }
 }
 
 /// A fixed-extent item with a visible label.

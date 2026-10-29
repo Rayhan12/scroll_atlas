@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'jump_lab_controller.dart';
 
-/// D1 Jump lab: prototype engine with alignment marker and build counter.
+/// D1 Jump lab: [AtlasListView] with an alignment marker, a scrollbar and
+/// a readout of builds, landing error and time for the last jump.
 class JumpLabScreen extends StatefulWidget {
   const JumpLabScreen({super.key});
 
@@ -53,11 +54,15 @@ class _JumpLabScreenState extends State<JumpLabScreen> {
               _controller.pickRandomIndex();
               _refresh();
             },
+            onInsert: () {
+              _controller.insertAtTop();
+              _refresh();
+            },
+            onGrow: () {
+              if (_controller.growAbove()) _refresh();
+            },
           ),
-          Text(
-            'Builds on last jump: ${_controller.lastJumpBuilds}',
-            textAlign: TextAlign.center,
-          ),
+          _Readout(controller: _controller),
           Expanded(
             child: LayoutBuilder(
               builder: (BuildContext context, BoxConstraints constraints) {
@@ -95,6 +100,8 @@ class _Controls extends StatelessWidget {
     required this.onJump,
     required this.onAnimate,
     required this.onRandom,
+    required this.onInsert,
+    required this.onGrow,
   });
 
   final JumpLabController controller;
@@ -102,6 +109,8 @@ class _Controls extends StatelessWidget {
   final VoidCallback onJump;
   final VoidCallback onAnimate;
   final VoidCallback onRandom;
+  final VoidCallback onInsert;
+  final VoidCallback onGrow;
 
   @override
   Widget build(BuildContext context) {
@@ -147,15 +156,59 @@ class _Controls extends StatelessWidget {
               ),
               FilledButton(
                 onPressed: onAnimate,
-                child: const Text('Animate (600 ms)'),
+                key: const Key('animate_button'),
+                child: const Text('Animate'),
               ),
               OutlinedButton(
                 onPressed: onRandom,
                 child: const Text('Random'),
               ),
+              OutlinedButton(
+                key: const Key('insert_button'),
+                onPressed: onInsert,
+                child: const Text('Insert 20 at top'),
+              ),
+              OutlinedButton(
+                key: const Key('grow_button'),
+                onPressed: onGrow,
+                child: const Text('Grow images above'),
+              ),
+              FilterChip(
+                key: const Key('slow_motion_chip'),
+                label: const Text('Slow motion'),
+                selected: controller.slowMotion,
+                onSelected: (bool value) {
+                  controller.slowMotion = value;
+                  onChanged();
+                },
+              ),
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Built items, landing error and time of the last jump or animation.
+class _Readout extends StatelessWidget {
+  const _Readout({required this.controller});
+
+  final JumpLabController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final error = controller.lastJumpError;
+    final ms = controller.lastJumpMs;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Text(
+        'Builds on last jump: ${controller.lastJumpBuilds}   '
+        'Error: ${error == null ? '-' : '${error.toStringAsFixed(2)} px'}   '
+        'Time: ${ms == null ? '-' : '${ms.toStringAsFixed(1)} ms'}   '
+        'Items: ${controller.itemCount}',
+        key: const Key('jump_readout'),
+        textAlign: TextAlign.center,
       ),
     );
   }
