@@ -31,6 +31,12 @@ class _FoodMenuScreenState extends State<FoodMenuScreen> {
             pinned: true,
             expandedHeight: 220,
             flexibleSpace: const FlexibleSpaceBar(
+              // Keep the title above the tab bar, which sits at the bottom
+              // of the flexible space.
+              titlePadding: EdgeInsetsDirectional.only(
+                start: 56,
+                bottom: 16 + kTextTabBarHeight,
+              ),
               title: Text('D4 Food menu'),
               background: _Hero(),
             ),

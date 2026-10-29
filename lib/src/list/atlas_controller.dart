@@ -25,6 +25,20 @@ import 'glide_scroll_activity.dart';
 /// middle, the same meaning as scrollable_positioned_list. With
 /// `respectPinned` (the default) the alignment is measured below whatever
 /// is pinned above the target at its final position.
+///
+/// ```dart
+/// final atlas = AtlasController();
+///
+/// AtlasListView.builder(
+///   controller: atlas,
+///   itemCount: 100000,
+///   itemBuilder: (context, index) => ListTile(title: Text('Item $index')),
+/// );
+///
+/// atlas.jumpTo(index: 75000, alignment: 0.5);
+/// await atlas.animateTo(index: 10, duration: const Duration(milliseconds: 600));
+/// atlas.dispose(); // in State.dispose
+/// ```
 class AtlasController implements AtlasLayoutRegistry, IndexJumper {
   /// Creates a controller. Pass [scrollController] to share one; otherwise
   /// the controller creates its own and disposes it in [dispose].

@@ -20,10 +20,10 @@
   <a href="https://pub.dev/packages/scroll_atlas/score"><img src="https://img.shields.io/pub/likes/scroll_atlas" alt="pub likes"></a>
   <a href="https://pub.dev/packages/scroll_atlas/score"><img src="https://img.shields.io/pub/points/scroll_atlas" alt="pub points"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license"></a>
-  <!-- <a href="https://github.com/Rayhan12/scroll_atlas/actions/workflows/ci.yaml"><img src="https://github.com/Rayhan12/scroll_atlas/actions/workflows/ci.yaml/badge.svg" alt="CI"></a> -->
+  <!-- <a href="https://github.com/Rayhan12/scroll_atlas/actions/workflows/ci.yml"><img src="https://github.com/Rayhan12/scroll_atlas/actions/workflows/ci.yml/badge.svg" alt="CI"></a> -->
 </p>
 
-> **Status: pre-release, in development.** The API below is the planned 1.0 API. Nothing is published yet, and the pub badges stay empty until the first release.
+> **Status: release candidate, not published yet.** All features below are built and tested. The pub badges stay empty until the first release.
 
 ## Features
 
@@ -36,6 +36,14 @@
 - **Linked scrollables.** `LinkedScrollGroup` keeps header rows, frozen columns and carousels aligned during flings.
 - **Stable while content changes.** Inserting items above, or images loading above, does not move what the user is reading.
 - **Drop-in migration.** `package:scroll_atlas/compat.dart` keeps the class names of `scrollable_positioned_list` and `linked_scroll_controller`.
+
+Live demo (Flutter web, published from each release tag by `.github/workflows/pages.yml`): https://Rayhan12.github.io/scroll_atlas/. Each screen has a deep link, such as `#/d4` for the food menu.
+
+| D2 Contacts | D3 Timetable | D4 Food menu | D6 Chat |
+|---|---|---|---|
+| <img src="assets/screenshots/d2.png" width="200" alt="Contacts with sticky letter headers"> | <img src="assets/screenshots/d3.png" width="200" alt="Timetable with linked headers"> | <img src="assets/screenshots/d4.png" width="200" alt="Food menu with scroll-synced tabs"> | <img src="assets/screenshots/d6.png" width="200" alt="Chat that opens at the first unread message"> |
+
+Run the demo app yourself with `cd example && flutter run`.
 
 ## Install
 

@@ -7,6 +7,15 @@ import 'package:flutter/foundation.dart';
 /// unobstructed viewport, the part below whatever is pinned above the
 /// list. 0 is its leading edge and 1 its trailing edge, so an item that is
 /// partly covered has a negative leading edge.
+///
+/// ```dart
+/// ValueListenableBuilder<List<AtlasItemPosition>>(
+///   valueListenable: atlas.positions,
+///   builder: (context, visible, _) => Text(
+///     visible.isEmpty ? '' : 'Showing ${visible.first.index} to ${visible.last.index}',
+///   ),
+/// );
+/// ```
 @immutable
 final class AtlasItemPosition {
   /// Creates a position.

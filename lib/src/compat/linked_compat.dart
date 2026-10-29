@@ -6,6 +6,13 @@ import '../linked/linked_scroll_group.dart';
 /// `LinkedScrollControllerGroup`, built on [LinkedScrollGroup].
 ///
 /// New code should use [LinkedScrollGroup] directly.
+///
+/// ```dart
+/// final group = LinkedScrollControllerGroup();
+/// final header = group.addAndGet();
+/// final body = group.addAndGet();
+/// group.addOffsetChangedListener(() => debugPrint('x = ${group.offset}'));
+/// ```
 class LinkedScrollControllerGroup extends LinkedScrollGroup {
   final Map<VoidCallback, LinkedOffsetListener> _changed = {};
 

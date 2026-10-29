@@ -13,6 +13,18 @@ import '../list/atlas_controller.dart';
 ///
 /// While [locked] (a tab tap is animating), [value] keeps its last value;
 /// [unlock] catches up with the current scroll position.
+///
+/// ```dart
+/// final spy = AtlasScrollSpy(
+///   controller: atlas,
+///   sectionIds: const ['starters', 'mains', 'desserts'],
+/// );
+/// ValueListenableBuilder<int>(
+///   valueListenable: spy,
+///   builder: (context, active, _) => Text('Now: ${spy.sectionIds[active]}'),
+/// );
+/// spy.dispose(); // in State.dispose
+/// ```
 class AtlasScrollSpy extends ChangeNotifier implements ValueListenable<int> {
   /// Creates a spy over [sectionIds], in scroll order, of the sections
   /// registered with [controller].

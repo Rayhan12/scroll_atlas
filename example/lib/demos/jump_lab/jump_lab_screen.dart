@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:scroll_atlas/scroll_atlas.dart';
 
+import '../demo_frame.dart';
 import 'jump_lab_controller.dart';
 
 /// D1 Jump lab: [AtlasListView] with an alignment marker, a scrollbar and
@@ -30,6 +31,15 @@ class _JumpLabScreenState extends State<JumpLabScreen> {
 
   void _refresh() => setState(() {});
 
+  /// Runs a jump or animation, then shows its result here and in the
+  /// debug overlay.
+  Future<void> _run(Future<void> Function() move) async {
+    await move();
+    if (!mounted) return;
+    _refresh();
+    DemoDebug.maybeOf(context)?.reportJump(_controller.lastJumpError);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,18 +50,8 @@ class _JumpLabScreenState extends State<JumpLabScreen> {
           _Controls(
             controller: _controller,
             onChanged: _refresh,
-            onJump: () async {
-              await _controller.jump();
-              if (mounted) {
-                _refresh();
-              }
-            },
-            onAnimate: () async {
-              await _controller.animate();
-              if (mounted) {
-                _refresh();
-              }
-            },
+            onJump: () => _run(_controller.jump),
+            onAnimate: () => _run(_controller.animate),
             onRandom: () {
               _controller.pickRandomIndex();
               _refresh();

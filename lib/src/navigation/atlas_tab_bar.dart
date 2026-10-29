@@ -16,6 +16,18 @@ import 'atlas_scroll_spy.dart';
 ///
 /// Use it as a pinned `SliverAppBar`'s `bottom`. Targets land below
 /// everything pinned, including this tab bar.
+///
+/// ```dart
+/// SliverAppBar(
+///   pinned: true,
+///   title: const Text('Menu'),
+///   bottom: AtlasTabBar(
+///     controller: atlas,
+///     sectionIds: const ['starters', 'mains', 'desserts'],
+///     tabs: const [Tab(text: 'Starters'), Tab(text: 'Mains'), Tab(text: 'Desserts')],
+///   ),
+/// );
+/// ```
 class AtlasTabBar extends StatefulWidget implements PreferredSizeWidget {
   /// Creates a tab bar with one tab per section.
   const AtlasTabBar({

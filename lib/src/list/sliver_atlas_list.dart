@@ -16,6 +16,21 @@ import 'render_sliver_atlas_list.dart';
 /// lists), in a [CustomScrollView] whose controller is
 /// `AtlasController.scrollController` (pass [controller]), or use
 /// `AtlasListView`, which does the wiring.
+///
+/// ```dart
+/// AtlasScrollView(
+///   controller: atlas,
+///   slivers: [
+///     const SliverAppBar(pinned: true, title: Text('Inbox')),
+///     SliverAtlasList.builder(
+///       id: 'mail',
+///       itemCount: mails.length,
+///       itemBuilder: (context, index) => MailTile(mails[index]),
+///     ),
+///   ],
+/// );
+/// atlas.jumpTo(target: const AtlasTarget.item('mail', 420));
+/// ```
 class SliverAtlasList extends StatefulWidget {
   /// Creates the sliver from a [delegate].
   const SliverAtlasList({

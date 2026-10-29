@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'demos/demo_catalog.dart';
+import 'demos/demo_frame.dart';
 
 void main() {
   runApp(const ScrollAtlasDemoApp());
@@ -19,8 +20,27 @@ class ScrollAtlasDemoApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const DemoHomeScreen(),
+      onGenerateRoute: demoRoute,
     );
   }
+}
+
+/// Route name of a demo, such as `/d4`, so the web build can deep link
+/// to one screen (`#/d4`).
+String demoRouteName(DemoScreenSpec spec) => '/${spec.id.toLowerCase()}';
+
+/// Builds the route for a demo's [RouteSettings.name], or null when no
+/// demo has that name.
+Route<void>? demoRoute(RouteSettings settings) {
+  for (final DemoScreenSpec spec in demoCatalog) {
+    if (demoRouteName(spec) != settings.name) continue;
+    return MaterialPageRoute<void>(
+      settings: settings,
+      builder: (BuildContext context) =>
+          DemoFrame(spec: spec, child: spec.builder(context)),
+    );
+  }
+  return null;
 }
 
 /// Home screen with one tile per planned demo screen.
@@ -56,11 +76,7 @@ class DemoTile extends StatelessWidget {
         title: Text('${spec.id} ${spec.title}'),
         subtitle: Text(spec.whatToTry),
         isThreeLine: true,
-        onTap: () {
-          Navigator.of(context).push<void>(
-            MaterialPageRoute<void>(builder: spec.builder),
-          );
-        },
+        onTap: () => Navigator.of(context).pushNamed<void>(demoRouteName(spec)),
       ),
     );
   }

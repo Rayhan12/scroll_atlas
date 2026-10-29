@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0 (unreleased)
+
+- Every example screen has a "What to try" card and a debug overlay with built items, the last jump error and frame build and raster times. The toggles sit in a strip under the screen so they never cover its controls.
+- `.github/workflows/pages.yml` builds the example for the web on `v*` tags and deploys it to GitHub Pages. Each demo has a deep link.
+- Dartdoc examples on the main public classes; real screenshots of the example app in `assets/screenshots/` and in the pubspec; README status, live demo link and fixed links.
+- Example D4: the collapsing title no longer overlaps the tab bar.
+
 ## 0.9.0 (unreleased)
 
 - `package:scroll_atlas/compat.dart` with `ScrollablePositionedList` (`.builder` and `.separated`, every 0.3.8 parameter), `ItemScrollController`, `ScrollOffsetController`, `ItemPositionsListener`, `ScrollOffsetListener` and `ItemPosition`, all backed by one `AtlasController`. `shrinkWrap` and `opacityAnimationWeights` are deprecated: the first asserts when true, the second has no effect.

@@ -18,6 +18,18 @@ const String _noShrinkWrap =
 /// `ScrollablePositionedList`, built on [AtlasListView].
 ///
 /// New code should use [AtlasListView] and [AtlasController] directly.
+///
+/// ```dart
+/// final itemScrollController = ItemScrollController();
+/// final itemPositionsListener = ItemPositionsListener.create();
+///
+/// ScrollablePositionedList.builder(
+///   itemCount: 500,
+///   itemBuilder: (context, index) => Text('Item $index'),
+///   itemScrollController: itemScrollController,
+///   itemPositionsListener: itemPositionsListener,
+/// );
+/// ```
 class ScrollablePositionedList extends StatefulWidget {
   /// Same as `ScrollablePositionedList.builder`.
   const ScrollablePositionedList.builder({
@@ -237,6 +249,15 @@ mixin _Attachable {
 }
 
 /// Same as scrollable_positioned_list's `ItemScrollController`.
+///
+/// ```dart
+/// itemScrollController.jumpTo(index: 150);
+/// itemScrollController.scrollTo(
+///   index: 150,
+///   duration: const Duration(seconds: 1),
+///   curve: Curves.easeInOutCubic,
+/// );
+/// ```
 class ItemScrollController with _Attachable {
   /// Shows item [index] at [alignment] (0 is the leading edge, 1 the
   /// trailing edge) without animation.
@@ -264,6 +285,13 @@ class ItemScrollController with _Attachable {
 }
 
 /// Same as scrollable_positioned_list's `ScrollOffsetController`.
+///
+/// ```dart
+/// scrollOffsetController.animateScroll(
+///   offset: 200,
+///   duration: const Duration(milliseconds: 300),
+/// );
+/// ```
 class ScrollOffsetController with _Attachable {
   /// Animates the scroll offset by [offset] pixels. Maps to
   /// [AtlasController.animateBy].
@@ -276,6 +304,13 @@ class ScrollOffsetController with _Attachable {
 }
 
 /// Same as scrollable_positioned_list's `ItemPositionsListener`.
+///
+/// ```dart
+/// itemPositionsListener.itemPositions.addListener(() {
+///   final first = itemPositionsListener.itemPositions.value.first.index;
+///   debugPrint('first visible: $first');
+/// });
+/// ```
 abstract class ItemPositionsListener {
   /// Creates a listener to pass to a [ScrollablePositionedList].
   factory ItemPositionsListener.create() = _ItemPositionsNotifier;
@@ -305,6 +340,11 @@ class _ItemPositionsNotifier with _Attachable implements ItemPositionsListener {
 }
 
 /// Same as scrollable_positioned_list's `ScrollOffsetListener`.
+///
+/// ```dart
+/// final listener = ScrollOffsetListener.create(recordProgrammaticScrolls: false);
+/// listener.changes.listen((delta) => debugPrint('moved $delta px'));
+/// ```
 abstract class ScrollOffsetListener {
   /// Creates a listener to pass to a [ScrollablePositionedList]. With
   /// [recordProgrammaticScrolls] false only deltas from a finger on the

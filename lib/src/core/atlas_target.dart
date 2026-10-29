@@ -9,6 +9,11 @@ import 'package:flutter/foundation.dart';
 ///   [sliverId] in an `AtlasScrollView`.
 /// * [AtlasTarget.section] and [AtlasTarget.sliver]: the leading edge of a
 ///   `SliverAtlasSection` or of any sliver wrapped in an `AtlasAnchor`.
+///
+/// ```dart
+/// atlas.jumpTo(target: const AtlasTarget.item('people-K', 3));
+/// atlas.jumpTo(target: const AtlasTarget.section('K'));
+/// ```
 @immutable
 sealed class AtlasTarget {
   const AtlasTarget._();

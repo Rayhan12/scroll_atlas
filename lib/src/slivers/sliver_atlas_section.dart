@@ -23,6 +23,19 @@ typedef AtlasHeaderBuilder = Widget Function(
 ///
 /// The section is a target for `AtlasTarget.section(id)`, and targets
 /// inside [sliver] are aligned below the stuck header.
+///
+/// ```dart
+/// SliverAtlasSection(
+///   id: 'K',
+///   header: (context, stuckAmount) => LetterHeader('K', elevated: stuckAmount > 0),
+///   sliver: SliverAtlasList.builder(
+///     id: 'people-K',
+///     itemCount: people.length,
+///     itemBuilder: (context, index) => PersonTile(people[index]),
+///   ),
+/// );
+/// atlas.jumpTo(target: const AtlasTarget.section('K'));
+/// ```
 class SliverAtlasSection extends StatefulWidget {
   /// Creates the section.
   const SliverAtlasSection({

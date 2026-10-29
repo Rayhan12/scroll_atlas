@@ -9,6 +9,17 @@ import 'atlas_controller.dart';
 /// forward while the list moves forward. Dragging the track jumps with
 /// [AtlasController.jumpToFraction]. Wrap an `AtlasListView` that uses the
 /// same [controller]; the platform scrollbar is turned off underneath.
+///
+/// ```dart
+/// AtlasScrollbar(
+///   controller: atlas,
+///   child: AtlasListView.builder(
+///     controller: atlas,
+///     itemCount: 100000,
+///     itemBuilder: (context, index) => Text('Item $index'),
+///   ),
+/// );
+/// ```
 class AtlasScrollbar extends StatelessWidget {
   /// Creates the scrollbar.
   const AtlasScrollbar({

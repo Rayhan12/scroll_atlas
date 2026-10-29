@@ -9,6 +9,14 @@ import 'atlas_target_sliver.dart';
 /// Makes any [sliver] (a `SliverToBoxAdapter`, a `SliverGrid`, ...) a
 /// target for `AtlasTarget.sliver(id)`. Its leading edge lands at
 /// the alignment line.
+///
+/// ```dart
+/// AtlasAnchor(
+///   id: 'photos',
+///   sliver: SliverGrid.count(crossAxisCount: 3, children: photos),
+/// );
+/// atlas.jumpTo(target: const AtlasTarget.sliver('photos'));
+/// ```
 class AtlasAnchor extends SingleChildRenderObjectWidget {
   /// Creates the anchor.
   const AtlasAnchor({
