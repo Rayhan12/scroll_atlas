@@ -230,7 +230,7 @@ Measured so far (headless test runs and an iOS simulator in debug mode, not real
 
 ## Example app
 
-The `example/` app opens on a gallery of five demos: a food menu with tabs that follow the sections, contacts A to Z with sticky headers, a chat that opens at the first unread message, a room booking table with a frozen header row and column, and a jump lab with 100,000 items. Each demo says what breaks with a plain `ListView` and what scroll_atlas fixes.
+The `example/` app opens on a gallery of five demos: a food menu with tabs that follow the sections, contacts A to Z with sticky headers, a chat that opens at the first unread message, a restaurant table booking grid with a frozen time row and table column, and a jump lab with 100,000 items. Each demo says what breaks with a plain `ListView` and what scroll_atlas fixes.
 
 ## Contributing
 

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:scroll_atlas/scroll_atlas.dart';
 
+import '../../app/demo_theme.dart';
 import 'contacts_data.dart';
 
 /// Contacts A to Z: a pinned app bar, 26 sticky letter headers, an A to
-/// Z index rail, a "Respect pinned headers" toggle and jump chips
-///
+/// Z index rail, a "Respect pinned headers" toggle and jump chips.
 class ContactsScreen extends StatefulWidget {
   const ContactsScreen({super.key});
 
@@ -29,6 +29,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Stack(
         children: <Widget>[
           AtlasScrollView(
@@ -95,22 +96,30 @@ class _JumpBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return SizedBox(
       height: barHeight,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+        padding: const EdgeInsets.symmetric(horizontal: Gap.m),
         child: Column(
           children: <Widget>[
             Row(
               children: <Widget>[
-                _chip('K, item 3', const AtlasTarget.item('people-K', 3)),
-                _chip('Z, item 3', const AtlasTarget.item('people-Z', 3)),
-                _chip('Footer', const AtlasTarget.sliver('footer')),
+                _chip(
+                    theme, 'K, item 3', const AtlasTarget.item('people-K', 3)),
+                _chip(
+                    theme, 'Z, item 3', const AtlasTarget.item('people-Z', 3)),
+                _chip(theme, 'Footer', const AtlasTarget.sliver('footer')),
               ],
             ),
             Row(
               children: <Widget>[
-                const Expanded(child: Text('Respect pinned headers')),
+                Expanded(
+                  child: Text(
+                    'Respect pinned headers',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                ),
                 Switch(
                   key: const Key('respect_pinned_switch'),
                   value: respectPinned,
@@ -124,12 +133,17 @@ class _JumpBar extends StatelessWidget implements PreferredSizeWidget {
     );
   }
 
-  Widget _chip(String label, AtlasTarget target) => Expanded(
+  Widget _chip(ThemeData theme, String label, AtlasTarget target) => Expanded(
         child: FittedBox(
           fit: BoxFit.scaleDown,
           child: ActionChip(
             tooltip: 'Jump to $label',
             visualDensity: VisualDensity.compact,
+            avatar: Icon(
+              Icons.near_me,
+              size: 16,
+              color: theme.colorScheme.primary,
+            ),
             label: Text(label),
             onPressed: () => onJump(target),
           ),
@@ -151,15 +165,20 @@ class LetterHeader extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return Material(
       key: ValueKey<String>('header-$letter'),
-      elevation: 4 * stuck,
-      color: Color.lerp(scheme.surface, scheme.primaryContainer, stuck),
+      elevation: 2 * stuck,
+      shadowColor: Colors.black26,
+      color: Color.lerp(scheme.surfaceContainerLow, scheme.surface, stuck),
       child: SizedBox(
         height: 40,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: Gap.l),
           child: Align(
             alignment: Alignment.centerLeft,
-            child: Text(letter, style: Theme.of(context).textTheme.titleMedium),
+            child: Text(
+              letter,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: scheme.primary, fontWeight: FontWeight.w800),
+            ),
           ),
         ),
       ),
@@ -177,19 +196,25 @@ class ContactTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final contact = contactAt(letter, index);
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     return ListTile(
       key: ValueKey<String>('contact-$letter-$index'),
+      contentPadding: const EdgeInsets.only(left: Gap.l, right: Gap.xl + 8),
       leading: CircleAvatar(
-        backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+        backgroundColor: scheme.primaryContainer,
         child: Text(
           contact.name.split(' ').map((String w) => w[0]).join(),
-          style: TextStyle(
-            color: Theme.of(context).colorScheme.onSecondaryContainer,
-          ),
+          style: theme.textTheme.labelLarge
+              ?.copyWith(color: scheme.onPrimaryContainer),
         ),
       ),
-      title: Text(contact.name),
-      subtitle: Text(contact.note),
+      title: Text(contact.name, style: theme.textTheme.titleSmall),
+      subtitle: Text(
+        contact.note,
+        style:
+            theme.textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+      ),
       isThreeLine: contact.note.contains('\n'),
     );
   }
@@ -219,13 +244,25 @@ class IndexRail extends StatelessWidget {
           onTapDown: (TapDownDetails d) => _pick(d.localPosition, height),
           onVerticalDragUpdate: (DragUpdateDetails d) =>
               _pick(d.localPosition, height),
-          child: SizedBox(
-            width: 24,
+          child: Container(
+            width: 22,
+            margin: const EdgeInsets.only(right: Gap.xs),
+            decoration: ShapeDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              shape: const StadiumBorder(),
+            ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: <Widget>[
                 for (final String letter in contactLetters)
-                  Text(letter, style: const TextStyle(fontSize: 11)),
+                  Text(
+                    letter,
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
               ],
             ),
           ),
@@ -244,9 +281,18 @@ class _Footer extends StatelessWidget {
       child: Container(
         key: const Key('footer_block'),
         height: 240,
-        color: Theme.of(context).colorScheme.secondaryContainer,
+        margin: const EdgeInsets.fromLTRB(Gap.l, Gap.l, Gap.l, 0),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primaryContainer,
+          borderRadius: BorderRadius.circular(Corners.l),
+        ),
         alignment: Alignment.center,
-        child: const Text('Footer: 26 sections, sticky headers, any target'),
+        child: Text(
+          'Footer: 26 sections, sticky headers, any target',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
+              ),
+        ),
       ),
     );
   }

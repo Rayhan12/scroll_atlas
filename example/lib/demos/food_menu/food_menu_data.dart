@@ -18,6 +18,9 @@ final class Dish {
   final String? tag;
 }
 
+/// Name of the demo restaurant.
+const String restaurantName = 'Saffron Kitchen';
+
 /// Section id used by the scroll view, the spy and the tab bar.
 String menuSectionId(int index) => 'menu-$index';
 

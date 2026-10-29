@@ -12,6 +12,7 @@ final class DemoSpec {
     required this.withAtlas,
     required this.whatToTry,
     required this.builder,
+    this.photo,
   });
 
   /// Route name without the slash, such as `menu` for `#/menu`.
@@ -34,6 +35,9 @@ final class DemoSpec {
 
   /// Steps to try on the screen.
   final String whatToTry;
+
+  /// Bundled photo for the gallery card, or null for an icon banner.
+  final String? photo;
 
   /// Builds the demo screen.
   final WidgetBuilder builder;

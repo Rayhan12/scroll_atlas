@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:scroll_atlas/scroll_atlas.dart';
 
+import '../../app/demo_theme.dart';
 import 'chat_thread.dart';
 
 /// Chat: a reversed [AtlasListView] that opens at the first unread
@@ -68,7 +69,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Chat')),
+      appBar: AppBar(titleSpacing: 0, title: const _ChatTitle()),
       body: Column(
         children: <Widget>[
           Expanded(
@@ -125,24 +126,48 @@ class _MessageTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final replyTo = message.replyTo;
+    final mine = message.mine;
+    const r = Radius.circular(18);
+    const tail = Radius.circular(4);
     final bubble = ValueListenableBuilder<int?>(
       valueListenable: highlighted,
       builder: (BuildContext context, int? id, Widget? child) => Container(
         key: ValueKey<String>('bubble-${message.id}'),
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        padding: const EdgeInsets.all(10),
+        margin: const EdgeInsets.symmetric(horizontal: Gap.m, vertical: 3),
+        padding:
+            const EdgeInsets.symmetric(horizontal: Gap.m + 2, vertical: 10),
         constraints: const BoxConstraints(maxWidth: 300),
         decoration: BoxDecoration(
           color: id == message.id
               ? scheme.tertiaryContainer
-              : message.mine
-                  ? scheme.primaryContainer
-                  : scheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
+              : mine
+                  ? scheme.primary
+                  : scheme.surface,
+          borderRadius: BorderRadius.only(
+            topLeft: r,
+            topRight: r,
+            bottomLeft: mine ? r : tail,
+            bottomRight: mine ? tail : r,
+          ),
+          boxShadow: mine
+              ? null
+              : const <BoxShadow>[
+                  BoxShadow(color: Color(0x14000000), blurRadius: 4),
+                ],
         ),
-        child: child,
+        child: DefaultTextStyle.merge(
+          style: TextStyle(
+            color: id == message.id
+                ? scheme.onTertiaryContainer
+                : mine
+                    ? Colors.white
+                    : scheme.onSurface,
+          ),
+          child: child!,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -154,10 +179,17 @@ class _MessageTile extends StatelessWidget {
               onTap: () => onQuoteTap(replyTo),
               child: Container(
                 margin: const EdgeInsets.only(bottom: 6),
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.fromLTRB(Gap.s, 6, Gap.s, 6),
                 decoration: BoxDecoration(
+                  color: mine
+                      ? Colors.white.withValues(alpha: 0.18)
+                      : scheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(Corners.s),
                   border: Border(
-                    left: BorderSide(color: scheme.primary, width: 3),
+                    left: BorderSide(
+                      color: mine ? Colors.white : scheme.primary,
+                      width: 3,
+                    ),
                   ),
                 ),
                 child: Column(
@@ -165,39 +197,91 @@ class _MessageTile extends StatelessWidget {
                   children: <Widget>[
                     Text(
                       quoted!.mine ? 'You' : 'Nadia',
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: scheme.primary,
-                          ),
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: mine ? Colors.white : scheme.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     Text(
                       quoted!.text,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall,
+                      style: theme.textTheme.bodySmall,
                     ),
                   ],
                 ),
               ),
             ),
-          Text(message.text),
+          Text(message.text, style: const TextStyle(height: 1.3)),
         ],
       ),
     );
     return Column(
       crossAxisAlignment:
-          message.mine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          mine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: <Widget>[
         if (firstUnread)
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.symmetric(vertical: Gap.m),
             child: Center(
-              child: Text(
-                'First unread',
-                style: TextStyle(color: scheme.primary),
+              child: DecoratedBox(
+                decoration: ShapeDecoration(
+                  color: scheme.primaryContainer,
+                  shape: const StadiumBorder(),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: Gap.m,
+                    vertical: Gap.xs,
+                  ),
+                  child: Text(
+                    'First unread',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: scheme.onPrimaryContainer,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
         bubble,
+      ],
+    );
+  }
+}
+
+/// Avatar, name and status in the app bar.
+class _ChatTitle extends StatelessWidget {
+  const _ChatTitle();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    return Row(
+      children: <Widget>[
+        CircleAvatar(
+          radius: 18,
+          backgroundColor: scheme.primaryContainer,
+          child: Text(
+            'N',
+            style: theme.textTheme.titleSmall
+                ?.copyWith(color: scheme.onPrimaryContainer),
+          ),
+        ),
+        const SizedBox(width: Gap.m),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            Text('Nadia', style: theme.textTheme.titleMedium),
+            Text(
+              'Online',
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: const Color(0xFF1EA362)),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -211,29 +295,32 @@ class _Composer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.all(8),
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              child: TextField(
-                key: const Key('chat_input'),
-                controller: controller,
-                decoration: const InputDecoration(
-                  hintText: 'Message',
-                  border: OutlineInputBorder(),
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surface,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(Gap.m, Gap.s, Gap.s, Gap.s),
+          child: Row(
+            children: <Widget>[
+              Expanded(
+                child: TextField(
+                  key: const Key('chat_input'),
+                  controller: controller,
+                  decoration: const InputDecoration(hintText: 'Message'),
+                  onSubmitted: (_) => onSend(),
                 ),
-                onSubmitted: (_) => onSend(),
               ),
-            ),
-            IconButton(
-              key: const Key('chat_send'),
-              icon: const Icon(Icons.send),
-              onPressed: onSend,
-            ),
-          ],
+              const SizedBox(width: Gap.s),
+              IconButton.filled(
+                key: const Key('chat_send'),
+                tooltip: 'Send',
+                icon: const Icon(Icons.send_rounded),
+                onPressed: onSend,
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -65,12 +65,37 @@ void main() {
   testWidgets('scrolling by hand moves the active tab',
       (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: FoodMenuScreen()));
-    await tester.drag(find.byType(CustomScrollView), const Offset(0, -900));
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -1600));
     await tester.pumpAndSettle();
     final scrolled = tabController(tester).index;
     expect(scrolled, greaterThan(0));
-    await tester.drag(find.byType(CustomScrollView), const Offset(0, 3000));
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, 5000));
     await tester.pumpAndSettle();
     expect(tabController(tester).index, 0);
+  });
+
+  testWidgets('adding a dish shows the cart bar with its count',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(home: FoodMenuScreen(startWithItems: false)),
+    );
+    expect(find.byKey(const Key('cart_bar')), findsNothing);
+    final dish = menuSections.first.dishes.first;
+    final add = find.byKey(ValueKey<String>('add-${dish.name}'));
+    // ensureVisible parks the dish at the top, under the pinned tabs, so
+    // pull it back down before tapping.
+    await tester.ensureVisible(add);
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, 200));
+    await tester.pumpAndSettle();
+    await tester.tap(add);
+    await tester.pump();
+    expect(find.byKey(const Key('cart_bar')), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('cart_bar')),
+        matching: find.text('1'),
+      ),
+      findsOneWidget,
+    );
   });
 }

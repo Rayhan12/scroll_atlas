@@ -15,7 +15,10 @@ void main() {
   testWidgets('tapping a tile opens its demo by name',
       (WidgetTester tester) async {
     await tester.pumpWidget(const ScrollAtlasDemoApp());
-    await tester.tap(find.text('Food menu'));
+    final card = find.byKey(const ValueKey<String>('demo-card-menu'));
+    await tester.ensureVisible(card);
+    await tester.pumpAndSettle();
+    await tester.tap(card);
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('debug_toggle')), findsOneWidget);
   });

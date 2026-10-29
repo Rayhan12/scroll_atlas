@@ -39,13 +39,13 @@ void main() {
         const Offset(-300, -400), 2500);
     await tester.pumpAndSettle();
     expect(find.text('00:00'), findsNothing);
-    expect(find.text('Room 0'), findsNothing);
+    expect(find.text('Table 0'), findsNothing);
     final cells = find.byWidgetPredicate((Widget w) =>
         w.key is ValueKey<String> &&
         (w.key! as ValueKey<String>).value.startsWith('cell-'));
     final first = cells.evaluate().first.widget.key! as ValueKey<String>;
     final parts = first.value.split('-');
-    final room = find.text('Room ${parts[1]}');
+    final room = find.text('Table ${parts[1]}');
     if (room.evaluate().isNotEmpty) {
       expect(
         tester.getCenter(find.byKey(first)).dy,
@@ -59,7 +59,7 @@ void main() {
     await open(tester);
     await tester.tap(find.byTooltip('Go to 12:00'));
     await tester.pumpAndSettle();
-    await tester.drag(find.text('Room 2'), const Offset(0, -3000));
+    await tester.drag(find.text('Table 2'), const Offset(0, -3000));
     await tester.pumpAndSettle();
     final header = tester.getRect(find
         .ancestor(of: find.text('12:00'), matching: find.byType(Center))

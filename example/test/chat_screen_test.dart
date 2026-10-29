@@ -69,8 +69,13 @@ void main() {
   testWidgets('at the bottom, a sent message shows and stays pinned',
       (tester) async {
     final thread = await open(tester);
-    await tester.drag(find.byType(Scrollable).first, const Offset(0, -5000));
-    await tester.pumpAndSettle();
+    // The first drag reaches the newest message and measures the items
+    // estimated on the way; the list keeps the screen still while it
+    // fixes their offsets, so a second drag settles on the bottom edge.
+    for (var i = 0; i < 2; i++) {
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -5000));
+      await tester.pumpAndSettle();
+    }
 
     await tester.enterText(find.byKey(const Key('chat_input')), 'hello');
     await tester.tap(find.byKey(const Key('chat_send')));

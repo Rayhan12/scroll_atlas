@@ -66,7 +66,13 @@ class _DemoFrameState extends State<DemoFrame> {
           Expanded(
             child: Stack(
               children: <Widget>[
-                KeyedSubtree(key: _screenKey, child: widget.child),
+                // The bar below owns the bottom safe area, so the screen
+                // does not pad for the home indicator a second time.
+                MediaQuery.removePadding(
+                  context: context,
+                  removeBottom: true,
+                  child: KeyedSubtree(key: _screenKey, child: widget.child),
+                ),
                 Positioned(
                   left: Gap.s,
                   right: Gap.s,
@@ -123,40 +129,47 @@ class _WhyBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Material(
-      color: scheme.surfaceContainer,
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(Gap.l, Gap.xs, Gap.xs, Gap.xs),
-          child: Row(
-            children: <Widget>[
-              Icon(Icons.check_circle, size: 18, color: scheme.primary),
-              const SizedBox(width: Gap.s),
-              Expanded(
-                child: Text(
-                  spec.withAtlas,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall,
+      color: scheme.surface,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          border: Border(top: BorderSide(color: scheme.outlineVariant)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(Gap.l, Gap.xs, Gap.s, Gap.xs),
+            child: Row(
+              children: <Widget>[
+                Icon(Icons.check_circle, size: 18, color: scheme.primary),
+                const SizedBox(width: Gap.s),
+                Expanded(
+                  child: Text(
+                    spec.withAtlas,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
                 ),
-              ),
-              IconButton(
-                key: const Key('what_to_try_toggle'),
-                tooltip: 'How it helps',
-                isSelected: showTips,
-                icon: const Icon(Icons.lightbulb_outline),
-                selectedIcon: const Icon(Icons.lightbulb),
-                onPressed: onTips,
-              ),
-              IconButton(
-                key: const Key('debug_toggle'),
-                tooltip: 'Debug',
-                isSelected: showDebug,
-                icon: const Icon(Icons.speed_outlined),
-                selectedIcon: const Icon(Icons.speed),
-                onPressed: onDebug,
-              ),
-            ],
+                IconButton(
+                  key: const Key('what_to_try_toggle'),
+                  tooltip: 'How it helps',
+                  isSelected: showTips,
+                  color: scheme.onSurfaceVariant,
+                  selectedIcon: Icon(Icons.lightbulb, color: scheme.primary),
+                  icon: const Icon(Icons.lightbulb_outline),
+                  onPressed: onTips,
+                ),
+                IconButton(
+                  key: const Key('debug_toggle'),
+                  tooltip: 'Debug',
+                  isSelected: showDebug,
+                  color: scheme.onSurfaceVariant,
+                  selectedIcon: Icon(Icons.speed, color: scheme.primary),
+                  icon: const Icon(Icons.speed_outlined),
+                  onPressed: onDebug,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -176,8 +189,9 @@ class _TipsCard extends StatelessWidget {
     final theme = Theme.of(context);
     return Card(
       key: const Key('what_to_try_card'),
-      elevation: 3,
-      color: theme.colorScheme.surfaceContainerHigh,
+      elevation: 6,
+      shadowColor: Colors.black26,
+      color: theme.colorScheme.surface,
       child: Padding(
         padding: const EdgeInsets.all(Gap.l),
         child: Column(
@@ -265,8 +279,11 @@ class _DebugPanelState extends State<_DebugPanel> {
         return Card(
           key: const Key('debug_overlay'),
           color: Colors.black.withValues(alpha: 0.85),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(Corners.m),
+          ),
           child: Padding(
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(Gap.m),
             child: DefaultTextStyle(
               style: const TextStyle(color: Colors.white, fontSize: 12),
               child: Column(

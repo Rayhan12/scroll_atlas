@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../app/food_photos.dart';
 import 'chat/chat_screen.dart';
 import 'contacts/contacts_screen.dart';
 import 'demo_spec.dart';
@@ -22,6 +23,7 @@ final List<DemoSpec> demoCatalog = <DemoSpec>[
         'right under the tabs.',
     whatToTry: 'Tap Desserts, then Starters. Then scroll slowly and watch '
         'the tabs follow.',
+    photo: FoodPhotos.hero,
     builder: (BuildContext context) => const FoodMenuScreen(),
   ),
   DemoSpec(
@@ -52,12 +54,12 @@ final List<DemoSpec> demoCatalog = <DemoSpec>[
   ),
   DemoSpec(
     slug: 'timetable',
-    title: 'Room bookings',
-    icon: Icons.table_chart,
-    problem: 'A big table with a frozen time row and room column.',
+    title: 'Table bookings',
+    icon: Icons.table_restaurant,
+    problem: 'A big booking grid with a frozen time row and table column.',
     withListView: 'Nested lists scroll one axis per drag, and the headers '
         'drift away from the cells during a fling.',
-    withAtlas: 'Drag or fling diagonally; the header row and room column '
+    withAtlas: 'Drag or fling diagonally; the time row and table column '
         'stay locked to the cells on every frame.',
     whatToTry: 'Fling diagonally across the grid, then tap the clock to '
         'go to 12:00.',

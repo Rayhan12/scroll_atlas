@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:scroll_atlas/scroll_atlas.dart';
 
+import '../../app/demo_theme.dart';
 import '../demo_frame.dart';
 import 'jump_lab_controller.dart';
 
@@ -81,7 +82,7 @@ class _JumpLabScreenState extends State<JumpLabScreen> {
                       child: IgnorePointer(
                         child: Container(
                           height: 2,
-                          color: Theme.of(context).colorScheme.error,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
                       ),
                     ),
@@ -117,77 +118,81 @@ class _Controls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          TextField(
-            key: const Key('jump_index_field'),
-            controller: controller.indexController,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Index',
-              border: OutlineInputBorder(),
+    return Card(
+      margin: const EdgeInsets.fromLTRB(Gap.m, Gap.s, Gap.m, Gap.xs),
+      child: Padding(
+        padding: const EdgeInsets.all(Gap.m),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            TextField(
+              key: const Key('jump_index_field'),
+              controller: controller.indexController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                hintText: 'Index',
+                prefixIcon: Icon(Icons.tag),
+              ),
+              onSubmitted: (_) => onChanged(),
             ),
-            onSubmitted: (_) => onChanged(),
-          ),
-          Row(
-            children: <Widget>[
-              const Text('Alignment'),
-              Expanded(
-                child: Slider(
-                  value: controller.alignment,
-                  divisions: 4,
-                  onChanged: (double value) {
-                    controller.alignment = value;
+            Row(
+              children: <Widget>[
+                Text('Alignment',
+                    style: Theme.of(context).textTheme.labelLarge),
+                Expanded(
+                  child: Slider(
+                    value: controller.alignment,
+                    divisions: 4,
+                    onChanged: (double value) {
+                      controller.alignment = value;
+                      onChanged();
+                    },
+                  ),
+                ),
+                Text(controller.alignment.toStringAsFixed(2)),
+              ],
+            ),
+            Wrap(
+              spacing: Gap.s,
+              runSpacing: Gap.s,
+              children: <Widget>[
+                FilledButton(
+                  key: const Key('jump_button'),
+                  onPressed: onJump,
+                  child: const Text('Jump'),
+                ),
+                FilledButton(
+                  onPressed: onAnimate,
+                  key: const Key('animate_button'),
+                  child: const Text('Animate'),
+                ),
+                OutlinedButton(
+                  onPressed: onRandom,
+                  child: const Text('Random'),
+                ),
+                OutlinedButton(
+                  key: const Key('insert_button'),
+                  onPressed: onInsert,
+                  child: const Text('Insert 20 at top'),
+                ),
+                OutlinedButton(
+                  key: const Key('grow_button'),
+                  onPressed: onGrow,
+                  child: const Text('Grow images above'),
+                ),
+                FilterChip(
+                  key: const Key('slow_motion_chip'),
+                  label: const Text('Slow motion'),
+                  selected: controller.slowMotion,
+                  onSelected: (bool value) {
+                    controller.slowMotion = value;
                     onChanged();
                   },
                 ),
-              ),
-              Text(controller.alignment.toStringAsFixed(2)),
-            ],
-          ),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: <Widget>[
-              FilledButton(
-                key: const Key('jump_button'),
-                onPressed: onJump,
-                child: const Text('Jump'),
-              ),
-              FilledButton(
-                onPressed: onAnimate,
-                key: const Key('animate_button'),
-                child: const Text('Animate'),
-              ),
-              OutlinedButton(
-                onPressed: onRandom,
-                child: const Text('Random'),
-              ),
-              OutlinedButton(
-                key: const Key('insert_button'),
-                onPressed: onInsert,
-                child: const Text('Insert 20 at top'),
-              ),
-              OutlinedButton(
-                key: const Key('grow_button'),
-                onPressed: onGrow,
-                child: const Text('Grow images above'),
-              ),
-              FilterChip(
-                key: const Key('slow_motion_chip'),
-                label: const Text('Slow motion'),
-                selected: controller.slowMotion,
-                onSelected: (bool value) {
-                  controller.slowMotion = value;
-                  onChanged();
-                },
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -203,8 +208,14 @@ class _Readout extends StatelessWidget {
   Widget build(BuildContext context) {
     final error = controller.lastJumpError;
     final ms = controller.lastJumpMs;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: Gap.m, vertical: Gap.xs),
+      padding: const EdgeInsets.symmetric(horizontal: Gap.m, vertical: Gap.s),
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer,
+        borderRadius: BorderRadius.circular(Corners.m),
+      ),
       child: Text(
         'Builds on last jump: ${controller.lastJumpBuilds}   '
         'Error: ${error == null ? '-' : '${error.toStringAsFixed(2)} px'}   '
@@ -212,6 +223,10 @@ class _Readout extends StatelessWidget {
         'Items: ${controller.itemCount}',
         key: const Key('jump_readout'),
         textAlign: TextAlign.center,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: scheme.onPrimaryContainer,
+              fontWeight: FontWeight.w700,
+            ),
       ),
     );
   }
@@ -231,10 +246,14 @@ class _VisibleReadout extends StatelessWidget {
         final text = visible.isEmpty
             ? 'Visible: -'
             : 'Visible: ${visible.first.index} to ${visible.last.index}';
-        return Text(
-          text,
-          key: const Key('visible_readout'),
-          textAlign: TextAlign.center,
+        return Padding(
+          padding: const EdgeInsets.only(bottom: Gap.xs),
+          child: Text(
+            text,
+            key: const Key('visible_readout'),
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.labelMedium,
+          ),
         );
       },
     );
