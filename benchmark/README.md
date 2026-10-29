@@ -30,4 +30,16 @@ The prototype is the first engine measured (`results/flutter_test-2026-10-29.md`
 
 Other engines in the headless run: super_sliver_list matches B1 but fails B2 (snap) and B6; scrollable_positioned_list passes B2 (0.44 px) but builds 36 to 44 items per jump (fails B1) and fails B6; scrollview_observer settles only 1% of jumps in 1 frame and fails B2 and B6.
 
+## Prototype before and AtlasListView after (iOS simulator, debug)
+
+iPhone 17 Pro simulator `1734C9C8-14B3-4428-AD99-B807B5B1410F`, debug mode, so wall and frame times are not comparable with a release or profile build. The prototype is `results/ios-sim-iphone17pro-debug-2026-10-29.md`, AtlasListView is `results/ios-sim-iphone17pro-debug-s1-2026-10-29.md`.
+
+| scenario | target | prototype | AtlasListView | met |
+|---|---|---|---|---|
+| B1 jump storm | settled in 1 frame, error <= 0.5 px, built <= 30 | 100% in 1 frame, 0 px, built p50 12, max 16 | 100% in 1 frame, 0 px, built p50 12, max 16 | yes |
+| B2 animate 80,000 items | error <= 0.5 px, last frame move < 2 px | error 0, but snaps at the end (last move n/a), fail | error 0, last move 1.73 px, 23 frames, 0 jank frames | yes |
+| B6 insert 20 above while reading | item moves < 0.5 px | not measured for the prototype | shift 0 px on the first frame and after settling | yes |
+
+On the simulator scrollable_positioned_list also passes B2 (1.95 px) but builds 37 to 44 items per jump; super_sliver_list moves 122 px in its last B2 frame. The first two simulator attempts did not finish (a 20 minute timeout in the scrollview_observer B1 run, then a stalled app); the third finished in 8 min 46 s.
+
 Each engine is measured against its own alignment convention (`lib/measure/alignment_convention.dart`). 
