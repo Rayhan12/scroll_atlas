@@ -1,3 +1,6 @@
+import 'dart:math' as math;
+
+import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 import 'linked_scroll_group.dart';
@@ -9,13 +12,14 @@ typedef LinkedCellBuilder = Widget Function(
   int column,
 );
 
-/// A table with a frozen header row and a frozen first column, built from
-/// standard [ListView]s and two [LinkedScrollGroup]s.
+/// A table with a frozen header row and a frozen first column, linked by
+/// two [LinkedScrollGroup]s.
 ///
-/// The header row and every body row share the [horizontalGroup]; the row
-/// header column and the body share the [verticalGroup]. Rows build lazily
-/// and each new row starts at the group's offset, so it already lines up
-/// with the header when it appears.
+/// The body is one two-dimensional scroll view that builds only the
+/// visible cells and scrolls both axes at once, so a diagonal drag or
+/// fling moves it freely ([diagonalDragBehavior]). The header row shares
+/// the [horizontalGroup] with the body, and the first column shares the
+/// [verticalGroup], so both stay in line on every frame.
 ///
 /// ```dart
 /// LinkedTable(
@@ -28,9 +32,8 @@ typedef LinkedCellBuilder = Widget Function(
 /// ```
 ///
 /// This is a recipe, not a data grid: there is no sorting, editing or
-/// selection. Each gesture scrolls one axis, because the body rows are
-/// separate scroll views; two fingers, one on the header row and one on
-/// the body, scroll both at once.
+/// selection. Dragging the header row scrolls only the columns, and
+/// dragging the first column scrolls only the rows.
 class LinkedTable extends StatefulWidget {
   /// Creates a table of [rowCount] rows and [columnCount] columns.
   const LinkedTable({
@@ -47,6 +50,7 @@ class LinkedTable extends StatefulWidget {
     this.horizontalGroup,
     this.verticalGroup,
     this.physics,
+    this.diagonalDragBehavior = DiagonalDragBehavior.free,
     super.key,
   });
 
@@ -91,6 +95,10 @@ class LinkedTable extends StatefulWidget {
   /// Physics of every scroll view in the table.
   final ScrollPhysics? physics;
 
+  /// How the body handles drags that are not along one axis. The default,
+  /// [DiagonalDragBehavior.free], scrolls both axes at once.
+  final DiagonalDragBehavior diagonalDragBehavior;
+
   @override
   State<LinkedTable> createState() => _LinkedTableState();
 }
@@ -102,13 +110,15 @@ class _LinkedTableState extends State<LinkedTable> {
       widget.verticalGroup ?? LinkedScrollGroup();
   late final ScrollController _header = _columns.createController();
   late final ScrollController _rowHeaders = _rows.createController();
-  late final ScrollController _body = _rows.createController();
+  late final ScrollController _bodyColumns = _columns.createController();
+  late final ScrollController _bodyRows = _rows.createController();
 
   @override
   void dispose() {
     _header.dispose();
     _rowHeaders.dispose();
-    _body.dispose();
+    _bodyColumns.dispose();
+    _bodyRows.dispose();
     if (widget.horizontalGroup == null) _columns.dispose();
     if (widget.verticalGroup == null) _rows.dispose();
     super.dispose();
@@ -116,24 +126,25 @@ class _LinkedTableState extends State<LinkedTable> {
 
   @override
   Widget build(BuildContext context) {
+    final table = widget;
     return Column(
       children: <Widget>[
         SizedBox(
-          height: widget.headerExtent,
+          height: table.headerExtent,
           child: Row(
             children: <Widget>[
               SizedBox(
-                width: widget.rowHeaderExtent,
-                child: widget.cornerBuilder?.call(context),
+                width: table.rowHeaderExtent,
+                child: table.cornerBuilder?.call(context),
               ),
               Expanded(
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   controller: _header,
-                  physics: widget.physics,
-                  itemExtent: widget.columnExtent,
-                  itemCount: widget.columnCount,
-                  itemBuilder: widget.columnHeaderBuilder,
+                  physics: table.physics,
+                  itemExtent: table.columnExtent,
+                  itemCount: table.columnCount,
+                  itemBuilder: table.columnHeaderBuilder,
                 ),
               ),
             ],
@@ -143,26 +154,34 @@ class _LinkedTableState extends State<LinkedTable> {
           child: Row(
             children: <Widget>[
               SizedBox(
-                width: widget.rowHeaderExtent,
+                width: table.rowHeaderExtent,
                 child: ListView.builder(
                   controller: _rowHeaders,
-                  physics: widget.physics,
-                  itemExtent: widget.rowExtent,
-                  itemCount: widget.rowCount,
-                  itemBuilder: widget.rowHeaderBuilder,
+                  physics: table.physics,
+                  itemExtent: table.rowExtent,
+                  itemCount: table.rowCount,
+                  itemBuilder: table.rowHeaderBuilder,
                 ),
               ),
               Expanded(
-                child: ListView.builder(
-                  controller: _body,
-                  physics: widget.physics,
-                  itemExtent: widget.rowExtent,
-                  itemCount: widget.rowCount,
-                  itemBuilder: (BuildContext context, int row) => _LinkedRow(
-                    key: ValueKey<int>(row),
-                    group: _columns,
-                    row: row,
-                    table: widget,
+                child: _GridBody(
+                  verticalDetails: ScrollableDetails.vertical(
+                    controller: _bodyRows,
+                    physics: table.physics,
+                  ),
+                  horizontalDetails: ScrollableDetails.horizontal(
+                    controller: _bodyColumns,
+                    physics: table.physics,
+                  ),
+                  diagonalDragBehavior: table.diagonalDragBehavior,
+                  rowExtent: table.rowExtent,
+                  columnExtent: table.columnExtent,
+                  delegate: TwoDimensionalChildBuilderDelegate(
+                    maxXIndex: table.columnCount - 1,
+                    maxYIndex: table.rowCount - 1,
+                    addRepaintBoundaries: false,
+                    builder: (BuildContext context, ChildVicinity cell) =>
+                        table.cellBuilder(context, cell.yIndex, cell.xIndex),
                   ),
                 ),
               ),
@@ -174,44 +193,166 @@ class _LinkedTableState extends State<LinkedTable> {
   }
 }
 
-/// One body row: a horizontal list that joins the column group while it
-/// is built and leaves it when it scrolls away.
-class _LinkedRow extends StatefulWidget {
-  const _LinkedRow({
-    required this.group,
-    required this.row,
-    required this.table,
-    super.key,
+/// The body: a two-dimensional scroll view over a grid of fixed-size
+/// cells.
+class _GridBody extends TwoDimensionalScrollView {
+  const _GridBody({
+    required super.verticalDetails,
+    required super.horizontalDetails,
+    required super.diagonalDragBehavior,
+    required TwoDimensionalChildBuilderDelegate super.delegate,
+    required this.rowExtent,
+    required this.columnExtent,
   });
 
-  final LinkedScrollGroup group;
-  final int row;
-  final LinkedTable table;
+  final double rowExtent;
+  final double columnExtent;
 
   @override
-  State<_LinkedRow> createState() => _LinkedRowState();
+  Widget buildViewport(
+    BuildContext context,
+    ViewportOffset verticalOffset,
+    ViewportOffset horizontalOffset,
+  ) =>
+      _GridViewport(
+        verticalOffset: verticalOffset,
+        verticalAxisDirection: verticalDetails.direction,
+        horizontalOffset: horizontalOffset,
+        horizontalAxisDirection: horizontalDetails.direction,
+        delegate: delegate as TwoDimensionalChildBuilderDelegate,
+        mainAxis: mainAxis,
+        cacheExtent: cacheExtent,
+        clipBehavior: clipBehavior,
+        rowExtent: rowExtent,
+        columnExtent: columnExtent,
+      );
 }
 
-class _LinkedRowState extends State<_LinkedRow> {
-  late final ScrollController _controller = widget.group.createController();
+class _GridViewport extends TwoDimensionalViewport {
+  const _GridViewport({
+    required super.verticalOffset,
+    required super.verticalAxisDirection,
+    required super.horizontalOffset,
+    required super.horizontalAxisDirection,
+    required TwoDimensionalChildBuilderDelegate super.delegate,
+    required super.mainAxis,
+    required this.rowExtent,
+    required this.columnExtent,
+    super.cacheExtent,
+    super.clipBehavior,
+  });
+
+  final double rowExtent;
+  final double columnExtent;
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  RenderTwoDimensionalViewport createRenderObject(BuildContext context) =>
+      _RenderGridViewport(
+        horizontalOffset: horizontalOffset,
+        horizontalAxisDirection: horizontalAxisDirection,
+        verticalOffset: verticalOffset,
+        verticalAxisDirection: verticalAxisDirection,
+        delegate: delegate as TwoDimensionalChildBuilderDelegate,
+        mainAxis: mainAxis,
+        childManager: context as TwoDimensionalChildManager,
+        cacheExtent: cacheExtent,
+        clipBehavior: clipBehavior,
+        rowExtent: rowExtent,
+        columnExtent: columnExtent,
+      );
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    _RenderGridViewport renderObject,
+  ) {
+    renderObject
+      ..horizontalOffset = horizontalOffset
+      ..horizontalAxisDirection = horizontalAxisDirection
+      ..verticalOffset = verticalOffset
+      ..verticalAxisDirection = verticalAxisDirection
+      ..delegate = delegate
+      ..mainAxis = mainAxis
+      ..cacheExtent = cacheExtent
+      ..clipBehavior = clipBehavior
+      ..rowExtent = rowExtent
+      ..columnExtent = columnExtent;
+  }
+}
+
+class _RenderGridViewport extends RenderTwoDimensionalViewport {
+  _RenderGridViewport({
+    required super.horizontalOffset,
+    required super.horizontalAxisDirection,
+    required super.verticalOffset,
+    required super.verticalAxisDirection,
+    required TwoDimensionalChildBuilderDelegate super.delegate,
+    required super.mainAxis,
+    required super.childManager,
+    required double rowExtent,
+    required double columnExtent,
+    super.cacheExtent,
+    super.clipBehavior,
+  })  : _rowExtent = rowExtent,
+        _columnExtent = columnExtent;
+
+  double _rowExtent;
+  set rowExtent(double value) {
+    if (value == _rowExtent) return;
+    _rowExtent = value;
+    markNeedsLayout();
+  }
+
+  double _columnExtent;
+  set columnExtent(double value) {
+    if (value == _columnExtent) return;
+    _columnExtent = value;
+    markNeedsLayout();
   }
 
   @override
-  Widget build(BuildContext context) {
-    final table = widget.table;
-    return ListView.builder(
-      scrollDirection: Axis.horizontal,
-      controller: _controller,
-      physics: table.physics,
-      itemExtent: table.columnExtent,
-      itemCount: table.columnCount,
-      itemBuilder: (BuildContext context, int column) =>
-          table.cellBuilder(context, widget.row, column),
+  void layoutChildSequence() {
+    final builder = delegate as TwoDimensionalChildBuilderDelegate;
+    final columns = builder.maxXIndex! + 1;
+    final rows = builder.maxYIndex! + 1;
+    final x = horizontalOffset.pixels;
+    final y = verticalOffset.pixels;
+    final width = viewportDimension.width;
+    final height = viewportDimension.height;
+
+    final firstColumn = math.max(0, (x - cacheExtent) ~/ _columnExtent);
+    final lastColumn = math.min(
+      columns - 1,
+      ((x + width + cacheExtent) / _columnExtent).ceil(),
+    );
+    final firstRow = math.max(0, (y - cacheExtent) ~/ _rowExtent);
+    final lastRow = math.min(
+      rows - 1,
+      ((y + height + cacheExtent) / _rowExtent).ceil(),
+    );
+    final cellConstraints = BoxConstraints.tightFor(
+      width: _columnExtent,
+      height: _rowExtent,
+    );
+    for (var column = firstColumn; column <= lastColumn; column++) {
+      for (var row = firstRow; row <= lastRow; row++) {
+        final vicinity = ChildVicinity(xIndex: column, yIndex: row);
+        final child = buildOrObtainChildFor(vicinity);
+        if (child == null) continue;
+        child.layout(cellConstraints);
+        parentDataOf(child).layoutOffset = Offset(
+          column * _columnExtent - x,
+          row * _rowExtent - y,
+        );
+      }
+    }
+    verticalOffset.applyContentDimensions(
+      0,
+      math.max(0, rows * _rowExtent - height),
+    );
+    horizontalOffset.applyContentDimensions(
+      0,
+      math.max(0, columns * _columnExtent - width),
     );
   }
 }
