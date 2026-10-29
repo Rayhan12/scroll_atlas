@@ -7,6 +7,10 @@
 - `AtlasScrollSpy`, the active section is the last one whose header has reached the bottom of the pinned area; a short last section wins at the end of the scroll.
 - `AtlasTabBar`, a `TabBar` kept in sync with the scroll; a tap locks the spy, animates to the section and moves the indicator once; a drag during the animation hands control back to the spy.
 - Example D1 shows a "Visible: a to b" readout; D4 Food menu (collapsing hero, pinned tabs over 8 sections).
+- `LinkedScrollGroup` with `createController`, `offset`, `jumpTo`, `animateTo`, offset listeners and `positions`. Late joiners start at the group's offset; disposing a member mid-fling leaves the others together; vertical and horizontal.
+- Only the member being scrolled drives; the others follow inside the same frame and stop their own activity, so there is never a second ballistic simulation. Overscroll is copied, and a shorter member stops at its own end.
+- `LinkedTable`, a frozen header row and first column built from standard `ListView`s and two groups. Benchmark B5: 1,000 x 50 table, two-finger diagonal flings, misalignment and frame time p90 and p99.
+- Example D3 Timetable (frozen times and rooms, "Go to 12:00", synced carousels).
 
 ## 0.2.0-dev.1 (unreleased)
 

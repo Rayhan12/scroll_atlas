@@ -174,6 +174,20 @@ final body = group.createController();
 // Give headerRow and body to two horizontal scroll views; they now move together.
 ```
 
+Only the scroll view under the finger drives; the others follow in the same frame, so flings never fight and nobody overshoots. A controller created after the group has moved starts at the group's offset, and disposing one member leaves the others scrolling. `group.jumpTo`, `group.animateTo` and `group.addOffsetListener` work on all members at once. Call `group.dispose()` after the controllers.
+
+`LinkedTable` is a recipe built on two groups: a frozen header row and first column over a lazily built body.
+
+```dart
+LinkedTable(
+  rowCount: 1000,
+  columnCount: 50,
+  cellBuilder: (context, row, column) => Text('$row:$column'),
+  columnHeaderBuilder: (context, column) => Text('C$column'),
+  rowHeaderBuilder: (context, row) => Text('R$row'),
+)
+```
+
 ## Migrating from scrollable_positioned_list
 
 **Step 1.** Swap the dependency:
@@ -223,7 +237,7 @@ What the other packages' own docs say:
 
 scroll_atlas aims to combine id-based targets, sticky-aware alignment, scroll-synced tabs, linked controllers and a drop-in layer for the two archived Google packages in one maintained package. Speed comparisons will appear here only after they are measured with the benchmark app on real devices, with links to the raw results.
 
-Progress so far (headless test runs and an iOS simulator in debug mode, not real devices yet): `AtlasListView` lands every jump in one frame within 0.5 px while building at most 16 items, animates across 80,000 items without a snap at the end (last frame move 0.11 px headless, 1.73 px on the iOS simulator), and keeps the item you are reading still when 20 items are inserted above it. Across 26 sticky sections under a pinned bar, 500 of 500 jumps land in one frame with no target hidden under a header (B4, headless). Tapping a tab moves the indicator exactly once (widget tests). Tables and raw files: [`benchmark/README.md`](benchmark/README.md).
+Progress so far (headless test runs and an iOS simulator in debug mode, not real devices yet): `AtlasListView` lands every jump in one frame within 0.5 px while building at most 16 items, animates across 80,000 items without a snap at the end (last frame move 0.11 px headless, 1.73 px on the iOS simulator), and keeps the item you are reading still when 20 items are inserted above it. Across 26 sticky sections under a pinned bar, 500 of 500 jumps land in one frame with no target hidden under a header (B4, headless). Tapping a tab moves the indicator exactly once (widget tests). A 1,000 x 50 linked table keeps its header row, first column and rows within 0 px of each other on every frame of 24 two-finger diagonal flings (B5, headless). Tables and raw files: [`benchmark/README.md`](benchmark/README.md).
 
 ## Example app
 

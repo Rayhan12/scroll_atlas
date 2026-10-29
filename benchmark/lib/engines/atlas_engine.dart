@@ -1,14 +1,18 @@
 import 'package:flutter/widgets.dart';
 import 'package:scroll_atlas/scroll_atlas.dart';
 
+import 'linked_table_engine.dart';
 import 'sticky_sections_engine.dart';
 
 /// Option (a), decided: the public scroll_atlas engine
 /// ([AtlasListView] with an [AtlasController]) behind the same interface.
 /// It also builds sticky sections for B4 ([AtlasScrollView] with
-/// [SliverAtlasSection]s).
-final class AtlasEngine implements IndexedScrollEngine, StickySectionsEngine {
+/// [SliverAtlasSection]s), and a [LinkedTable] for B5.
+final class AtlasEngine
+    implements IndexedScrollEngine, StickySectionsEngine, LinkedTableEngine {
   final AtlasController _controller = AtlasController();
+  final LinkedScrollGroup _columns = LinkedScrollGroup();
+  final LinkedScrollGroup _rows = LinkedScrollGroup();
 
   @override
   String get id => 'scroll_atlas';
@@ -74,7 +78,37 @@ final class AtlasEngine implements IndexedScrollEngine, StickySectionsEngine {
       );
 
   @override
-  void dispose() => _controller.dispose();
+  Widget buildLinkedTable({
+    required int rows,
+    required int columns,
+    required double rowExtent,
+    required double columnExtent,
+  }) => LinkedTable(
+    rowCount: rows,
+    columnCount: columns,
+    rowExtent: rowExtent,
+    columnExtent: columnExtent,
+    headerExtent: rowExtent,
+    rowHeaderExtent: columnExtent,
+    horizontalGroup: _columns,
+    verticalGroup: _rows,
+    cellBuilder: (context, row, column) => const SizedBox.expand(),
+    columnHeaderBuilder: (context, column) => const SizedBox.expand(),
+    rowHeaderBuilder: (context, row) => const SizedBox.expand(),
+  );
+
+  @override
+  Iterable<ScrollPosition> get horizontalMembers => _columns.positions;
+
+  @override
+  Iterable<ScrollPosition> get verticalMembers => _rows.positions;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _columns.dispose();
+    _rows.dispose();
+  }
 }
 
 /// A fixed pinned bar, the app bar of B4 without Material.

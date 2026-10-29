@@ -28,9 +28,17 @@
 ///   fractional edges, told at most once per frame.
 /// * [AtlasScrollSpy], the active section, and [AtlasTabBar], tabs that
 ///   follow the sections and jump to them.
+///
+/// Scroll views that move together:
+///
+/// * [LinkedScrollGroup], controllers that share one offset, with late
+///   joiners and a single driver so flings never fight.
+/// * [LinkedTable], a frozen header row and first column table recipe.
 library;
 
 import 'src/core/atlas_target.dart';
+import 'src/linked/linked_scroll_group.dart';
+import 'src/linked/linked_table.dart';
 import 'src/list/atlas_controller.dart';
 import 'src/list/atlas_list_view.dart';
 import 'src/list/atlas_options.dart';
@@ -49,6 +57,8 @@ export 'src/core/index_fraction.dart';
 export 'src/core/item_position.dart' show AtlasItemPosition, AtlasItemPositions;
 export 'src/core/scroll_target.dart';
 export 'src/engine/list_engine.dart';
+export 'src/linked/linked_scroll_group.dart';
+export 'src/linked/linked_table.dart';
 export 'src/list/atlas_controller.dart';
 export 'src/list/atlas_list_view.dart';
 export 'src/list/atlas_options.dart';

@@ -67,5 +67,13 @@ void main() {
       isTrue,
       reason: 'scroll_atlas must cover no B4 target',
     );
+    final linked = results.where(
+      (r) => r.engineId == 'scroll_atlas' && r.scenarioId == 'B5',
+    );
+    expect(
+      linked.single.passed,
+      isTrue,
+      reason: 'linked members must stay within 0.5 px',
+    );
   }, timeout: const Timeout(Duration(minutes: 10)));
 }

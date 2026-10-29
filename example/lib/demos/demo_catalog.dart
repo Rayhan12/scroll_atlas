@@ -5,6 +5,7 @@ import 'contacts/contacts_screen.dart';
 import 'food_menu/food_menu_screen.dart';
 import 'jump_lab/jump_lab_screen.dart';
 import 'placeholder_demo_screen.dart';
+import 'timetable/timetable_screen.dart';
 
 /// Metadata and navigation for one demo screen in the example app.
 final class DemoScreenSpec {
@@ -54,9 +55,10 @@ final List<DemoScreenSpec> demoCatalog = <DemoScreenSpec>[
     summary:
         'Frozen time header row and room column linked to the body, plus a '
         '"synced carousels" variant',
-    whatToTry: 'Fling diagonally; scroll down so new rows build',
+    whatToTry: 'Fling with two fingers, one on the times and one on the '
+        'rooms; scroll down so new rows build; tap Go to 12:00',
     tickets: '',
-    builder: _placeholderBuilder('D3'),
+    builder: (BuildContext context) => const TimetableScreen(),
   ),
   DemoScreenSpec(
     id: 'D4',

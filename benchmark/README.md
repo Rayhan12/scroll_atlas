@@ -54,3 +54,13 @@ Each engine is measured against its own alignment convention (`lib/measure/align
 
 B1, B2 and B6 for `scroll_atlas` in the same run match the earlier run: B1 100% in 1 frame, 0 px, built p50 12, max 16; B2 error 0, last move 0.11 px, 40 frames; B6 shift 0 px.
 
+## B5 linked table (headless, debug)
+
+`results/flutter_test-s4-2026-10-29.md`. B5 builds a 1,000 x 50 `LinkedTable` (48 px rows, 96 px columns, frozen header row and first column) and runs 24 diagonal flings, three forward and one back. Each fling is two fingers at once, one on the header row and one on the body, with 6 moves 8 ms apart, then frames until both axes rest. On every frame, misalignment is the largest gap between two members of the same axis. Only engines with linked scrolling run B5.
+
+| scenario | target | before | scroll_atlas | met |
+|---|---|---|---|---|
+| B5 1,000 x 50 linked table, 24 diagonal flings | members of an axis within 0.5 px on every frame | not available (no linking before) | misalignment max 0.00 px over 2,448 frames, up to 31 members, 0 unsettled flings, ends at x 2,397.70 px and y 40,531.46 px | yes |
+| B5 frame wall time (host VM, debug) | p90 and p99 recorded | not available | p50 3.85 ms, p90 9.54 ms, p99 18.15 ms, max 48.91 ms | recorded |
+
+Wall times are debug-mode JIT numbers on the box's host CPU, so they say nothing about a device; device build and raster times appear only on a real device. linked_scroll_controller is not run in B5 yet. B1, B2, B4 and B6 for `scroll_atlas` in the same run match the earlier runs: B1 100% in 1 frame, 0 px, built max 16; B2 error 0, last move 0.11 px; B4 0 covered, 500 of 500 in 1 frame; B6 shift 0 px.
