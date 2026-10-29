@@ -1,5 +1,6 @@
 // On-device benchmark run. Same runner and scenarios as the headless
-// test; only the binding and the result sink differ.
+// test; only the binding and the result sink differ. The timeout is 60
+// minutes because scrollview_observer B1 is slow in debug on a simulator.
 //
 // Run through run.dart, for example:
 //   dart run run.dart --device <device-id>            (profile, real device)
@@ -25,5 +26,5 @@ void main() {
       log: debugPrint,
     );
     binding.reportData = <String, Object?>{'run': run.toJson()};
-  }, timeout: const Timeout(Duration(minutes: 20)));
+  }, timeout: const Timeout(Duration(minutes: 60)));
 }

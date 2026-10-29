@@ -198,6 +198,8 @@ What the other packages' own docs say:
 
 scroll_atlas aims to combine id-based targets, sticky-aware alignment, scroll-synced tabs, linked controllers and a drop-in layer for the two archived Google packages in one maintained package. Speed comparisons will appear here only after they are measured with the benchmark app on real devices, with links to the raw results.
 
+Progress so far (headless test runs and an iOS simulator in debug mode, not real devices yet): `AtlasListView` lands every jump in one frame within 0.5 px while building at most 16 items, animates across 80,000 items without a snap at the end, and keeps the item you are reading still when 20 items are inserted above it. Tables and raw files: [`benchmark/README.md`](benchmark/README.md).
+
 ## Example app
 
 The `example/` app has six screens: Jump lab (100,000 items), Contacts A to Z with sticky headers, Timetable with a frozen header and column, Food menu with synced tabs, Migration before and after, and Chat with jump to reply.
