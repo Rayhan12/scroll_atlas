@@ -27,7 +27,7 @@ class AtlasListView extends StatefulWidget {
     this.findChildIndexCallback,
     this.initialIndex = 0,
     this.initialAlignment = 0,
-    this.anchor = AtlasAnchor.firstVisible,
+    this.anchorMode = AtlasAnchorMode.firstVisible,
     this.scrollDirection = Axis.vertical,
     this.reverse = false,
     this.physics,
@@ -59,7 +59,7 @@ class AtlasListView extends StatefulWidget {
   final double initialAlignment;
 
   /// What stays still when items above the viewport change.
-  final AtlasAnchor anchor;
+  final AtlasAnchorMode anchorMode;
 
   /// Scroll axis.
   final Axis scrollDirection;
@@ -116,7 +116,7 @@ class _AtlasListViewState extends State<AtlasListView> {
     final controller = _controller;
     Widget sliver = SliverAtlasList(
       controller: controller,
-      anchor: widget.anchor,
+      anchorMode: widget.anchorMode,
       initialIndex: widget.initialIndex,
       initialAlignment: widget.initialAlignment,
       estimator: widget.estimator,

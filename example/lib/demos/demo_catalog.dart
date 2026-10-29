@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'chat/chat_screen.dart';
+import 'contacts/contacts_screen.dart';
 import 'jump_lab/jump_lab_screen.dart';
 import 'placeholder_demo_screen.dart';
 
@@ -44,7 +45,7 @@ final List<DemoScreenSpec> demoCatalog = <DemoScreenSpec>[
         '"Respect pinned headers" toggle, Footer chip',
     whatToTry: 'Scrub the rail; jump to K 3 with the toggle off then on',
     tickets: '',
-    builder: _placeholderBuilder('D2'),
+    builder: (BuildContext context) => const ContactsScreen(),
   ),
   DemoScreenSpec(
     id: 'D3',

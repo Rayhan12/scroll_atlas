@@ -18,16 +18,16 @@ final class ItemProbe {
 
   double get viewportExtent => _host.size.height;
 
-  RenderBox? _itemBox(int index) {
-    final context = _visibleItemContext(index);
-    return context?.findRenderObject() as RenderBox?;
-  }
+  RenderBox? _itemBox(int index) => _boxWithKey(FixtureKeys.item(index));
 
-  BuildContext? _visibleItemContext(int index) {
+  RenderBox? _boxWithKey(Key key) =>
+      _contextWithKey(key)?.findRenderObject() as RenderBox?;
+
+  BuildContext? _contextWithKey(Key key) {
     BuildContext? found;
     void visit(Element element) {
       if (found != null) return;
-      if (element.widget.key == FixtureKeys.item(index)) {
+      if (element.widget.key == key) {
         found = element;
         return;
       }
@@ -38,12 +38,34 @@ final class ItemProbe {
     return found;
   }
 
+  /// Whether the first scroll view in the host rests at its end, where a
+  /// target near the end cannot reach its alignment line.
+  bool get atScrollEnd {
+    ScrollPosition? position;
+    void visit(Element element) {
+      if (position != null) return;
+      if (element is StatefulElement && element.state is ScrollableState) {
+        position = (element.state as ScrollableState).position;
+        return;
+      }
+      element.visitChildElements(visit);
+    }
+
+    hostKey.currentContext?.visitChildElements(visit);
+    final p = position;
+    return p != null && p.pixels >= p.maxScrollExtent - 0.5;
+  }
+
   /// True when item [index] is built and laid out.
   bool isBuilt(int index) => _itemBox(index)?.hasSize ?? false;
 
   /// Leading edge of [index] from the host's top, or null if not built.
-  double? leadingEdge(int index) {
-    final box = _itemBox(index);
+  double? leadingEdge(int index) => leadingEdgeOf(FixtureKeys.item(index));
+
+  /// Leading edge of the widget with [key] from the host's top, or null if
+  /// it is not built.
+  double? leadingEdgeOf(Key key) {
+    final box = _boxWithKey(key);
     if (box == null || !box.hasSize) return null;
     return PositionProbe.leadingEdgeInViewport(box, _host);
   }

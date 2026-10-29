@@ -43,3 +43,14 @@ iPhone 17 Pro simulator `1734C9C8-14B3-4428-AD99-B807B5B1410F`, debug mode, so w
 On the simulator scrollable_positioned_list also passes B2 (1.95 px) but builds 37 to 44 items per jump; super_sliver_list moves 122 px in its last B2 frame. The first two simulator attempts did not finish (a 20 minute timeout in the scrollview_observer B1 run, then a stalled app); the third finished in 8 min 46 s.
 
 Each engine is measured against its own alignment convention (`lib/measure/alignment_convention.dart`). 
+
+## B4 sticky sections (headless, debug)
+
+`results/flutter_test-s2-2026-10-29.md`. B4 jumps 500 times to seeded items across 26 sticky sections (20 to 120 items each) under a 56 px pinned bar with 40 px headers, at alignments 0, 0.25 and 0.5 of the space below the stuck header. A target is covered when its top lands under the bar or a stuck header. Targets near the end that the scroll extent clamps count as exact when they rest below that line. Only engines with a sticky section API run B4; the others are listed as not supported.
+
+| scenario | target | before | scroll_atlas | met |
+|---|---|---|---|---|
+| B4 500 jumps, 26 sticky sections | 0 covered, error <= 0.5 px in 1 frame | not available (no sections before) | 0 covered, 500 of 500 settled in 1 frame, first frame error max 0.00 px | yes |
+
+B1, B2 and B6 for `scroll_atlas` in the same run match the earlier run: B1 100% in 1 frame, 0 px, built p50 12, max 16; B2 error 0, last move 0.11 px, 40 frames; B6 shift 0 px.
+

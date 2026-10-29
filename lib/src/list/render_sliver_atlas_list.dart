@@ -2,10 +2,10 @@ import 'dart:math' as math;
 
 import 'package:flutter/rendering.dart';
 
-import '../core/alignment_math.dart';
 import '../core/extent_cache.dart';
 import '../core/index_fraction.dart';
 import '../core/scroll_target.dart';
+import '../slivers/atlas_placement.dart';
 import 'atlas_list_layout.dart';
 import 'atlas_options.dart';
 
@@ -21,23 +21,41 @@ import 'atlas_options.dart';
 /// * places a requested [ScrollTarget] exactly at its alignment in the
 ///   first frame after a jump,
 /// * keeps the first visible item still when items above it change
-///   ([AtlasAnchor.firstVisible]).
+///   ([AtlasAnchorMode.firstVisible]).
+///
+/// Targets are aligned below whatever is pinned above the list at their
+/// final position, and the list can sit anywhere in a
+/// `CustomScrollView` next to other slivers.
 ///
 /// Everything else (filling the cache area, garbage collection, keep
 /// alive) is the framework's list layout.
 class RenderSliverAtlasList extends RenderSliverList
+    with AtlasPlacement
     implements AtlasListLayout {
   /// Creates the render object.
   RenderSliverAtlasList({
     required super.childManager,
     required ExtentCache cache,
+    String? id,
     AtlasLayoutRegistry? registry,
-    AtlasAnchor anchor = AtlasAnchor.firstVisible,
+    AtlasAnchorMode anchorMode = AtlasAnchorMode.firstVisible,
     ScrollTarget? initialTarget,
   })  : _cache = cache,
+        _id = id,
         _registry = registry,
-        _anchor = anchor,
+        _anchorMode = anchorMode,
         _pendingTarget = initialTarget;
+
+  String? _id;
+
+  @override
+  String? get id => _id;
+  set id(String? value) {
+    if (value == _id) return;
+    if (attached) _registry?.detachLayout(this);
+    _id = value;
+    if (attached) _registry?.attachLayout(this);
+  }
 
   ExtentCache _cache;
 
@@ -60,13 +78,13 @@ class RenderSliverAtlasList extends RenderSliverList
     if (attached) _registry?.attachLayout(this);
   }
 
-  AtlasAnchor _anchor;
+  AtlasAnchorMode _anchorMode;
 
   /// What stays still when items above the viewport change.
-  AtlasAnchor get anchor => _anchor;
-  set anchor(AtlasAnchor value) {
-    if (value == _anchor) return;
-    _anchor = value;
+  AtlasAnchorMode get anchorMode => _anchorMode;
+  set anchorMode(AtlasAnchorMode value) {
+    if (value == _anchorMode) return;
+    _anchorMode = value;
     _readingAnchor = null;
   }
 
@@ -75,9 +93,11 @@ class RenderSliverAtlasList extends RenderSliverList
   /// True while a placed target is being placed again because the items
   /// above it needed more room than estimated.
   bool _replacingTarget = false;
+
+  /// Placement passes left for the pending target: after a correction the
+  /// next layout checks the target again, a bounded number of times.
+  int _placementPasses = _maxPlacementPasses;
   _ReadingAnchor? _readingAnchor;
-  double? _viewportExtent;
-  double _precedingScrollExtent = 0;
   double _scrollOffset = 0;
 
   @override
@@ -98,7 +118,7 @@ class RenderSliverAtlasList extends RenderSliverList
   int get itemCount => childManager.childCount;
 
   @override
-  double? get viewportExtent => _viewportExtent;
+  double? get viewportExtent => placementViewportExtent;
 
   @override
   bool isBuilt(int index) => _builtChild(index) != null;
@@ -109,7 +129,7 @@ class RenderSliverAtlasList extends RenderSliverList
     final local = child == null
         ? _estimatedLayoutOffsetOf(index)
         : childScrollOffset(child)!;
-    return _precedingScrollExtent + local;
+    return placementPrecedingExtent + local;
   }
 
   /// Estimates where [index] would be laid out.
@@ -123,7 +143,7 @@ class RenderSliverAtlasList extends RenderSliverList
     final first = firstChild;
     final last = lastChild;
     if (first == null || last == null || !last.hasSize) return estimate;
-    final reach = _followViewports * (_viewportExtent ?? 0);
+    final reach = _followViewports * (placementViewportExtent ?? 0);
     final firstIndex = indexOf(first);
     if (index < firstIndex) {
       final gap = _estimatedOffsetOf(firstIndex) - estimate;
@@ -159,12 +179,14 @@ class RenderSliverAtlasList extends RenderSliverList
   @override
   void anchorNextLayout(ScrollTarget target) {
     _pendingTarget = target;
+    _placementPasses = _maxPlacementPasses;
+    _replacingTarget = false;
     markNeedsLayout();
   }
 
   @override
   IndexSpan? get visibleSpan {
-    final viewport = _viewportExtent;
+    final viewport = placementViewportExtent;
     if (viewport == null || firstChild == null || itemCount == 0) return null;
     final start = math.max(0.0, _scrollOffset);
     final first = _fractionalIndexAt(start);
@@ -206,8 +228,7 @@ class RenderSliverAtlasList extends RenderSliverList
 
   @override
   void performLayout() {
-    _viewportExtent = constraints.viewportMainAxisExtent;
-    _precedingScrollExtent = constraints.precedingScrollExtent;
+    beginPlacementLayout();
     _scrollOffset = constraints.scrollOffset;
     _cache.itemCount = itemCount;
 
@@ -219,7 +240,10 @@ class RenderSliverAtlasList extends RenderSliverList
     final anchored = target == _TargetStep.placed;
     final readingAnchor = anchored ? null : _liveReadingAnchor();
     if (readingAnchor != null) _reseatMovedAnchor(readingAnchor);
-    if (!anchored && (firstChild == null || _isFarFromBuiltChildren())) {
+    if (!anchored &&
+        (firstChild == null ||
+            _isFarFromBuiltChildren() ||
+            _startsBelowWithoutLeadingItem())) {
       _restartAt(_cache.indexAt(_cacheRegionStart));
     }
 
@@ -239,7 +263,10 @@ class RenderSliverAtlasList extends RenderSliverList
       return;
     }
     if (!_estimatesFrozen) _recordBuiltExtents();
-    if (anchored && _correctTrailingGap()) return;
+    if (anchored && _correctTrailingGap()) {
+      _pendingTarget = null;
+      return;
+    }
     if (anchored && _correctPlacedTarget(placing!)) return;
     if (readingAnchor != null && _correctForReadingAnchor(readingAnchor)) {
       return;
@@ -263,6 +290,9 @@ class RenderSliverAtlasList extends RenderSliverList
       }
     }
     _readingAnchor = null;
+    // A list that starts below the viewport's leading edge shows nothing
+    // above its first item: moving its children is enough.
+    if (virtualScrollOffset < -ExtentCache.tolerance) return false;
     geometry = SliverGeometry(scrollOffsetCorrection: -offset);
     return true;
   }
@@ -275,14 +305,16 @@ class RenderSliverAtlasList extends RenderSliverList
       return _TargetStep.none;
     }
     final index = target.index.clamp(0, itemCount - 1);
-    final aligned = _alignedOffset(target);
+    final aligned = alignedOffset(target);
+    final estimate = _estimatedOffsetOf(index);
+    final virtualOffset = virtualScrollOffset;
     if (firstChild == null || _replacingTarget) {
       // First layout (initial index, or a list that just attached), or a
       // target placed again after the items above it grew: move the scroll
       // offset to the estimate first, so the items above the target have
       // room.
-      final desired = math.max(0.0, _estimatedOffsetOf(index) - aligned);
-      final correction = desired - constraints.scrollOffset;
+      final desired = math.max(minVirtualScrollOffset, estimate - aligned);
+      final correction = desired - virtualOffset;
       if (correction.abs() > ExtentCache.tolerance) {
         geometry = SliverGeometry(scrollOffsetCorrection: correction);
         return _TargetStep.corrected;
@@ -291,11 +323,18 @@ class RenderSliverAtlasList extends RenderSliverList
     _pendingTarget = null;
     _replacingTarget = false;
     _readingAnchor = null;
-    // Near the start the scroll offset was clamped at 0, so there is not
-    // enough room above the target to align it: put it at its own offset.
+    // A built target keeps its children: the normal layout runs and the
+    // placement check moves the scroll offset if needed.
+    final built = _builtChild(index);
+    if (built != null && _isInCacheRegion(built)) {
+      return _TargetStep.placed;
+    }
+    // Near the start of the list the scroll offset is clamped at 0, so the
+    // target goes to its alignment line, but never below its own estimate
+    // or above the list's start.
     final atStart = constraints.scrollOffset <= ExtentCache.tolerance;
     final layoutOffset = atStart
-        ? math.min(aligned, _estimatedOffsetOf(index))
+        ? math.max(0.0, math.min(virtualOffset + aligned, estimate))
         : constraints.scrollOffset + aligned;
     _restartAt(index, layoutOffset: layoutOffset);
     return _TargetStep.placed;
@@ -308,6 +347,23 @@ class RenderSliverAtlasList extends RenderSliverList
       constraints.scrollOffset +
       constraints.cacheOrigin +
       constraints.remainingCacheExtent;
+
+  /// A list that starts below the viewport's leading edge, but kept a
+  /// child from when it was above it (the framework keeps one). Laying it
+  /// out from that child would move the scroll offset to make room for the
+  /// items before it, under the content on screen.
+  bool _startsBelowWithoutLeadingItem() =>
+      indexOf(firstChild!) != 0 && virtualScrollOffset < -ExtentCache.tolerance;
+
+  /// Whether [child] would be kept by a layout at the current scroll
+  /// offset. The items before this list can change size between passes,
+  /// which moves a built target out of the region the layout keeps.
+  bool _isInCacheRegion(RenderBox child) {
+    final start = childScrollOffset(child);
+    if (start == null || !child.hasSize) return false;
+    return start + paintExtentOf(child) >= _cacheRegionStart &&
+        start <= _cacheRegionEnd;
+  }
 
   bool _isFarFromBuiltChildren() {
     final first = firstChild!;
@@ -336,12 +392,6 @@ class RenderSliverAtlasList extends RenderSliverList
     }
   }
 
-  double _alignedOffset(ScrollTarget target) =>
-      AlignmentMath.leadingEdgeInViewport(
-        alignment: target.alignment,
-        viewportExtent: constraints.viewportMainAxisExtent,
-      );
-
   /// After a jump near the start, the framework can move the items above
   /// the target once they are measured. Moves the scroll offset so the
   /// target sits at its alignment again, or as close as the start allows.
@@ -352,10 +402,12 @@ class RenderSliverAtlasList extends RenderSliverList
       child = childAfter(child);
     }
     if (child == null) return false;
-    final desired =
-        math.max(0.0, childScrollOffset(child)! - _alignedOffset(target));
-    final correction = desired - constraints.scrollOffset;
-    if (correction.abs() <= ExtentCache.tolerance) return false;
+    final correction = placementCorrection(childScrollOffset(child)!, target);
+    if (correction == null || _placementPasses <= 0) return false;
+    _placementPasses--;
+    // Check again in the next pass: what is pinned above the target can
+    // change with the scroll offset (a section header becomes stuck).
+    _pendingTarget = target;
     _readingAnchor = null;
     geometry = SliverGeometry(scrollOffsetCorrection: correction);
     return true;
@@ -366,6 +418,7 @@ class RenderSliverAtlasList extends RenderSliverList
   bool _correctTrailingGap() {
     final last = lastChild;
     if (last == null || indexOf(last) != itemCount - 1) return false;
+    if (!AtlasObstruction.isLast(this)) return false;
     final lastEnd = childScrollOffset(last)! + paintExtentOf(last);
     final gap =
         constraints.scrollOffset + constraints.remainingPaintExtent - lastEnd;
@@ -379,8 +432,16 @@ class RenderSliverAtlasList extends RenderSliverList
 
   _ReadingAnchor? _liveReadingAnchor() {
     final anchor = _readingAnchor;
-    if (anchor == null || _anchor == AtlasAnchor.none) return null;
+    if (anchor == null || _anchorMode == AtlasAnchorMode.none) return null;
     if (!identical(anchor.box.parent, this)) return null;
+    // A jump elsewhere in the scroll view moved this list away from its
+    // anchor: there is nothing on screen to keep in place.
+    if (anchor.layoutOffset > _cacheRegionEnd ||
+        anchor.layoutOffset <
+            _cacheRegionStart - constraints.viewportMainAxisExtent) {
+      _readingAnchor = null;
+      return null;
+    }
     return anchor;
   }
 
@@ -424,7 +485,7 @@ class RenderSliverAtlasList extends RenderSliverList
 
   void _recordReadingAnchor() {
     _readingAnchor = null;
-    if (_anchor == AtlasAnchor.none) return;
+    if (_anchorMode == AtlasAnchorMode.none) return;
     // Pinned to the start: new items at the start should push content
     // (a chat list stays at the newest message).
     if (constraints.scrollOffset <= 0.5) return;
@@ -457,6 +518,10 @@ class RenderSliverAtlasList extends RenderSliverList
     );
   }
 }
+
+/// Placement checks after a jump, so an oscillating obstruction cannot
+/// exhaust the viewport's layout cycles.
+const int _maxPlacementPasses = 3;
 
 enum _TargetStep { none, corrected, placed }
 

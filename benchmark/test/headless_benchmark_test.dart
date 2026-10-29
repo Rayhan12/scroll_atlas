@@ -59,5 +59,13 @@ void main() {
       isTrue,
       reason: 'prototype must meet the B1 target',
     );
+    final sticky = results.where(
+      (r) => r.engineId == 'scroll_atlas' && r.scenarioId == 'B4',
+    );
+    expect(
+      sticky.single.passed,
+      isTrue,
+      reason: 'scroll_atlas must cover no B4 target',
+    );
   }, timeout: const Timeout(Duration(minutes: 10)));
 }

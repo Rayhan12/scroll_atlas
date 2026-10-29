@@ -1,5 +1,5 @@
 /// What an Atlas list keeps still when items above the viewport change.
-enum AtlasAnchor {
+enum AtlasAnchorMode {
   /// Keep the first visible item at the same place on screen when items
   /// above it grow, shrink, or are inserted or removed. Inserted
   /// items keep their identity only when the list has keys and a

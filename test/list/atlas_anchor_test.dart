@@ -31,7 +31,7 @@ void main() {
   Future<_Feed> pump(
     WidgetTester tester, {
     int count = 100000,
-    AtlasAnchor anchor = AtlasAnchor.firstVisible,
+    AtlasAnchorMode anchor = AtlasAnchorMode.firstVisible,
   }) async {
     final feed = _Feed(count);
     usePhone(tester);
@@ -39,7 +39,7 @@ void main() {
       listenable: feed,
       builder: (context, _) => AtlasListView.builder(
         controller: controller,
-        anchor: anchor,
+        anchorMode: anchor,
         itemCount: feed.ids.length,
         findChildIndexCallback: (key) {
           final value = (key as ValueKey<String>).value;
@@ -78,9 +78,9 @@ void main() {
     expect(rectOf(tester, 50000)!.top, closeTo(0, 0.5));
   });
 
-  testWidgets('AtlasAnchor.none lets growth above push content down',
+  testWidgets('AtlasAnchorMode.none lets growth above push content down',
       (tester) async {
-    final feed = await pump(tester, anchor: AtlasAnchor.none);
+    final feed = await pump(tester, anchor: AtlasAnchorMode.none);
     controller.jumpTo(index: 50000, alignment: 0.3);
     await tester.pump();
     final before = rectOf(tester, 50000)!.top;

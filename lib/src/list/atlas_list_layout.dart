@@ -1,23 +1,37 @@
 import '../core/index_fraction.dart';
 import '../core/scroll_target.dart';
 
-/// What a controller can ask of an attached Atlas sliver. The render object
-/// implements it; controllers depend on this interface only (dependency
+/// What a controller can ask of any attached Atlas target sliver (an Atlas
+/// list, a `SliverAtlasSection` or an `AtlasAnchor`). Render objects
+/// implement it; controllers depend on this interface only (dependency
 /// inversion), so they never touch render objects or the extent cache.
-abstract interface class AtlasListLayout {
-  /// Number of items in the list.
+abstract interface class AtlasTargetLayout {
+  /// Id the sliver registered with, or null for an unnamed list.
+  String? get id;
+
+  /// Number of addressable positions: items for a list, 1 for a sliver.
   int get itemCount;
 
   /// Main axis extent of the viewport, or null before the first layout.
   double? get viewportExtent;
 
-  /// Whether item [index] is built and laid out.
+  /// Whether position [index] is laid out, so its offset is exact.
   bool isBuilt(int index);
 
-  /// Scroll offset of item [index]'s leading edge in the scroll view's
-  /// coordinates: exact when the item is built, estimated otherwise.
+  /// Scroll offset of position [index]'s leading edge in the scroll view's
+  /// coordinates: exact when it is built, estimated otherwise.
   double leadingOffsetOf(int index);
 
+  /// Extent pinned above this sliver's leading edge (pinned app bars and
+  /// enclosing stuck headers), as last measured or estimated.
+  double get pinnedObstruction;
+
+  /// Places [target] exactly at its alignment in the next layout.
+  void anchorNextLayout(ScrollTarget target);
+}
+
+/// What a controller can additionally ask of an Atlas list.
+abstract interface class AtlasListLayout implements AtlasTargetLayout {
   /// Measured or estimated main axis extent of item [index].
   double extentOf(int index);
 
@@ -25,9 +39,6 @@ abstract interface class AtlasListLayout {
   /// offsets of unbuilt items stay put. An animation freezes estimates so
   /// that its target does not wander while it crosses unbuilt items.
   void freezeEstimates({required bool frozen});
-
-  /// Places [target] exactly at its alignment in the next layout.
-  void anchorNextLayout(ScrollTarget target);
 
   /// Visible items in fractional indexes, or null before layout.
   IndexSpan? get visibleSpan;
@@ -37,8 +48,8 @@ abstract interface class AtlasListLayout {
 /// reach it. Implemented by `AtlasController`.
 abstract interface class AtlasLayoutRegistry {
   /// Called when the sliver attaches.
-  void attachLayout(AtlasListLayout layout);
+  void attachLayout(AtlasTargetLayout layout);
 
   /// Called when the sliver detaches.
-  void detachLayout(AtlasListLayout layout);
+  void detachLayout(AtlasTargetLayout layout);
 }

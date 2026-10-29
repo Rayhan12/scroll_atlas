@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import '../core/extent_cache.dart';
 import '../core/extent_estimator.dart';
 import '../core/scroll_target.dart';
+import '../slivers/atlas_scope.dart';
 import 'atlas_list_layout.dart';
 import 'atlas_options.dart';
 import 'render_sliver_atlas_list.dart';
@@ -11,31 +12,60 @@ import 'render_sliver_atlas_list.dart';
 /// extent of items it has not built, and keeps the item you are reading
 /// still when items above it change.
 ///
-/// Use it in a [CustomScrollView] whose controller is
-/// [AtlasController.scrollController], or use `AtlasListView`, which does
-/// the wiring. One [SliverAtlasList] per controller.
+/// Use it in an `AtlasScrollView` (give it an [id] when there are several
+/// lists), in a [CustomScrollView] whose controller is
+/// `AtlasController.scrollController` (pass [controller]), or use
+/// `AtlasListView`, which does the wiring.
 class SliverAtlasList extends StatefulWidget {
-  /// Creates the sliver.
+  /// Creates the sliver from a [delegate].
   const SliverAtlasList({
     required this.delegate,
+    this.id,
     this.controller,
-    this.anchor = AtlasAnchor.firstVisible,
+    this.anchorMode = AtlasAnchorMode.firstVisible,
     this.initialIndex = 0,
     this.initialAlignment = 0,
     this.estimator,
     super.key,
   });
 
+  /// Creates the sliver with a builder, like `SliverList.builder`.
+  SliverAtlasList.builder({
+    required int itemCount,
+    required NullableIndexedWidgetBuilder itemBuilder,
+    ChildIndexGetter? findChildIndexCallback,
+    bool addAutomaticKeepAlives = true,
+    bool addRepaintBoundaries = true,
+    this.id,
+    this.controller,
+    this.anchorMode = AtlasAnchorMode.firstVisible,
+    this.initialIndex = 0,
+    this.initialAlignment = 0,
+    this.estimator,
+    super.key,
+  }) : delegate = SliverChildBuilderDelegate(
+          itemBuilder,
+          childCount: itemCount,
+          findChildIndexCallback: findChildIndexCallback,
+          addAutomaticKeepAlives: addAutomaticKeepAlives,
+          addRepaintBoundaries: addRepaintBoundaries,
+        );
+
   /// Builds the items. Give it a `findChildIndexCallback` and keyed items
   /// so inserted items keep their identity (needed for anchoring on
   /// inserts).
   final SliverChildDelegate delegate;
 
-  /// Controller that jumps and animates this list.
+  /// Id for `AtlasTarget.item(id, index)`. Unique within one
+  /// scroll view; null for the only list of a controller.
+  final String? id;
+
+  /// Controller that jumps and animates this list. Defaults to the
+  /// controller of the enclosing `AtlasScrollView` or `AtlasScope`.
   final AtlasLayoutRegistry? controller;
 
   /// What stays still when items above the viewport change.
-  final AtlasAnchor anchor;
+  final AtlasAnchorMode anchorMode;
 
   /// Item shown at [initialAlignment] in the first frame.
   final int initialIndex;
@@ -57,8 +87,9 @@ class _SliverAtlasListState extends State<SliverAtlasList> {
   Widget build(BuildContext context) => _SliverAtlasListAdaptor(
         delegate: widget.delegate,
         cache: _cache,
-        registry: widget.controller,
-        anchor: widget.anchor,
+        id: widget.id,
+        registry: widget.controller ?? AtlasScope.maybeOf(context),
+        anchorMode: widget.anchorMode,
         initialTarget: widget.initialIndex == 0 && widget.initialAlignment == 0
             ? null
             : ScrollTarget(widget.initialIndex,
@@ -70,14 +101,16 @@ class _SliverAtlasListAdaptor extends SliverMultiBoxAdaptorWidget {
   const _SliverAtlasListAdaptor({
     required super.delegate,
     required this.cache,
+    required this.id,
     required this.registry,
-    required this.anchor,
+    required this.anchorMode,
     required this.initialTarget,
   });
 
   final ExtentCache cache;
+  final String? id;
   final AtlasLayoutRegistry? registry;
-  final AtlasAnchor anchor;
+  final AtlasAnchorMode anchorMode;
   final ScrollTarget? initialTarget;
 
   @override
@@ -89,8 +122,9 @@ class _SliverAtlasListAdaptor extends SliverMultiBoxAdaptorWidget {
       RenderSliverAtlasList(
         childManager: context as SliverMultiBoxAdaptorElement,
         cache: cache,
+        id: id,
         registry: registry,
-        anchor: anchor,
+        anchorMode: anchorMode,
         initialTarget: initialTarget,
       );
 
@@ -101,7 +135,8 @@ class _SliverAtlasListAdaptor extends SliverMultiBoxAdaptorWidget {
   ) {
     renderObject
       ..cache = cache
+      ..id = id
       ..registry = registry
-      ..anchor = anchor;
+      ..anchorMode = anchorMode;
   }
 }
