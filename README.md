@@ -4,7 +4,7 @@
 -->
 
 <p align="center">
-  <img src="assets/hero.png" alt="scroll_atlas: scroll to any index, sticky-aware jumps, linked controllers, scroll-synced tabs" width="100%">
+  <img src="assets/hero.png" alt="scroll_atlas: scroll to any item, land below sticky headers, tabs that follow the scroll" width="100%">
 </p>
 
 <h1 align="center">scroll_atlas</h1>
@@ -35,9 +35,9 @@
 - **Drop-in migration.** `package:scroll_atlas/compat.dart` keeps the class names of `scrollable_positioned_list` and `linked_scroll_controller`.
 
 
-| D2 Contacts | D3 Timetable | D4 Food menu | D6 Chat |
+| Food menu | Contacts | Table bookings | Chat |
 |---|---|---|---|
-| <img src="assets/screenshots/d2.png" width="200" alt="Contacts with sticky letter headers"> | <img src="assets/screenshots/d3.png" width="200" alt="Timetable with linked headers"> | <img src="assets/screenshots/d4.png" width="200" alt="Food menu with scroll-synced tabs"> | <img src="assets/screenshots/d6.png" width="200" alt="Chat that opens at the first unread message"> |
+| <img src="assets/screenshots/food_menu.png" width="200" alt="Restaurant menu with category tabs that follow the sections"> | <img src="assets/screenshots/contacts.png" width="200" alt="Contacts with sticky letter headers and an index rail"> | <img src="assets/screenshots/table_bookings.png" width="200" alt="Table booking grid with a frozen time row and table column"> | <img src="assets/screenshots/chat.png" width="200" alt="Chat that opens at the first unread message"> |
 
 Run the demo app yourself with `cd example && flutter run`.
 

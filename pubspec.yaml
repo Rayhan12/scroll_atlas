@@ -27,14 +27,14 @@ topics:
   - ui
 
 screenshots:
-  - description: "D2 Contacts: jump to any contact below a pinned app bar and sticky letter headers."
-    path: assets/screenshots/d2.png
-  - description: "D4 Food menu: tabs that follow the sections and jump to them in one move."
-    path: assets/screenshots/d4.png
-  - description: "D3 Timetable: a two-axis table with linked headers."
-    path: assets/screenshots/d3.png
-  - description: "scroll_atlas: scroll to index, sticky-aware jumps, linked controllers and synced tabs."
+  - description: "scroll_atlas: scroll to any item, land below sticky headers, tabs that follow the scroll."
     path: assets/hero.png
-  - description: "Jump to a contact below a pinned app bar and a sticky section header."
-    path: assets/banner.png
+  - description: "Restaurant menu with category tabs that follow the sections and jump in one move."
+    path: assets/screenshots/food_menu.png
+  - description: "Contacts A to Z with sticky letter headers and an index rail."
+    path: assets/screenshots/contacts.png
+  - description: "Table booking grid that scrolls diagonally with a frozen time row and table column."
+    path: assets/screenshots/table_bookings.png
+  - description: "Chat that opens at the first unread message."
+    path: assets/screenshots/chat.png
 
