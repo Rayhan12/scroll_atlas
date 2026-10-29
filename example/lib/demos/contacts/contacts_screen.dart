@@ -3,9 +3,9 @@ import 'package:scroll_atlas/scroll_atlas.dart';
 
 import 'contacts_data.dart';
 
-/// D2 Contacts A to Z: a pinned app bar, 26 sticky letter headers, an A to
+/// Contacts A to Z: a pinned app bar, 26 sticky letter headers, an A to
 /// Z index rail, a "Respect pinned headers" toggle and jump chips
-///.
+///
 class ContactsScreen extends StatefulWidget {
   const ContactsScreen({super.key});
 
@@ -36,7 +36,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
             slivers: <Widget>[
               SliverAppBar(
                 pinned: true,
-                title: const Text('D2 Contacts'),
+                title: const Text('Contacts'),
                 bottom: _JumpBar(
                   respectPinned: _respectPinned,
                   onRespectPinned: (bool value) =>
@@ -179,7 +179,15 @@ class ContactTile extends StatelessWidget {
     final contact = contactAt(letter, index);
     return ListTile(
       key: ValueKey<String>('contact-$letter-$index'),
-      leading: CircleAvatar(child: Text(letter)),
+      leading: CircleAvatar(
+        backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+        child: Text(
+          contact.name.split(' ').map((String w) => w[0]).join(),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSecondaryContainer,
+          ),
+        ),
+      ),
       title: Text(contact.name),
       subtitle: Text(contact.note),
       isThreeLine: contact.note.contains('\n'),

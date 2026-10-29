@@ -32,8 +32,6 @@ dependencies:
     sdk: flutter
   scroll_atlas:
     path: ../
-  # D5 only: the package the compat layer replaces, shown side by side.
-  scrollable_positioned_list: ^0.3.8
 
 dev_dependencies:
   flutter_test:

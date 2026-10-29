@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:scroll_atlas/scroll_atlas.dart';
 
-/// D3: a room timetable built on [LinkedTable], plus a synced carousels
-/// variant built on one [LinkedScrollGroup].
+/// Room bookings: a 200 room by 48 slot timetable on [LinkedTable]. The
+/// body scrolls freely in both directions while the time row and the room
+/// column stay locked to it.
 class TimetableScreen extends StatefulWidget {
   const TimetableScreen({super.key});
 
@@ -22,16 +23,28 @@ class TimetableScreen extends StatefulWidget {
   /// Whether [room] has a booking in [slot]; a fixed pattern, no data.
   static bool isBooked(int room, int slot) => (room * 7 + slot * 3) % 5 == 0;
 
+  /// Title of the booking in [room] at [slot].
+  static String bookingTitle(int room, int slot) =>
+      _titles[(room * 3 + slot) % _titles.length];
+
+  static const List<String> _titles = <String>[
+    'Design review',
+    'Standup',
+    'Hiring loop',
+    'Sprint demo',
+    '1:1',
+    'Customer call',
+    'Workshop',
+    'Planning',
+  ];
+
   @override
   State<TimetableScreen> createState() => _TimetableScreenState();
 }
 
-enum _View { table, carousels }
-
 class _TimetableScreenState extends State<TimetableScreen> {
   final LinkedScrollGroup _time = LinkedScrollGroup();
   final LinkedScrollGroup _rooms = LinkedScrollGroup();
-  _View _view = _View.table;
 
   @override
   void dispose() {
@@ -48,9 +61,12 @@ class _TimetableScreenState extends State<TimetableScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+    final muted = text.bodySmall?.copyWith(color: scheme.onSurfaceVariant);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('D3 Timetable'),
+        title: const Text('Room bookings'),
         actions: <Widget>[
           IconButton(
             tooltip: 'Go to 12:00',
@@ -58,125 +74,60 @@ class _TimetableScreenState extends State<TimetableScreen> {
             onPressed: _goToNoon,
           ),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(56),
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: SegmentedButton<_View>(
-              segments: const <ButtonSegment<_View>>[
-                ButtonSegment<_View>(
-                  value: _View.table,
-                  label: Text('Table'),
-                ),
-                ButtonSegment<_View>(
-                  value: _View.carousels,
-                  label: Text('Synced carousels'),
-                ),
-              ],
-              selected: <_View>{_view},
-              onSelectionChanged: (Set<_View> v) =>
-                  setState(() => _view = v.single),
-            ),
+      ),
+      body: LinkedTable(
+        key: const Key('timetable_table'),
+        rowCount: TimetableScreen.rooms,
+        columnCount: TimetableScreen.slots,
+        horizontalGroup: _time,
+        verticalGroup: _rooms,
+        cornerBuilder: (_) => ColoredBox(
+          color: scheme.surfaceContainer,
+          child: Center(child: Text('Room', style: text.labelLarge)),
+        ),
+        columnHeaderBuilder: (_, int slot) => ColoredBox(
+          color: scheme.surfaceContainer,
+          child: Center(
+            child: Text(TimetableScreen.slotLabel(slot), style: muted),
           ),
         ),
-      ),
-      body: switch (_view) {
-        _View.table => _Table(time: _time, rooms: _rooms),
-        _View.carousels => _Carousels(time: _time),
-      },
-    );
-  }
-}
-
-class _Table extends StatelessWidget {
-  const _Table({required this.time, required this.rooms});
-
-  final LinkedScrollGroup time;
-  final LinkedScrollGroup rooms;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return LinkedTable(
-      key: const Key('timetable_table'),
-      rowCount: TimetableScreen.rooms,
-      columnCount: TimetableScreen.slots,
-      horizontalGroup: time,
-      verticalGroup: rooms,
-      cornerBuilder: (_) => const Center(child: Text('Room')),
-      columnHeaderBuilder: (_, int slot) => Center(
-        child: Text(TimetableScreen.slotLabel(slot)),
-      ),
-      rowHeaderBuilder: (_, int room) => Center(child: Text('Room $room')),
-      cellBuilder: (_, int room, int slot) => Padding(
-        padding: const EdgeInsets.all(2),
-        child: DecoratedBox(
-          key: ValueKey<String>('cell-$room-$slot'),
-          decoration: BoxDecoration(
-            color: TimetableScreen.isBooked(room, slot)
-                ? scheme.primaryContainer
-                : scheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(6),
-          ),
+        rowHeaderBuilder: (_, int room) => ColoredBox(
+          color: scheme.surfaceContainerLow,
+          child: Center(child: Text('Room $room', style: text.labelLarge)),
         ),
-      ),
-    );
-  }
-}
-
-class _Carousels extends StatefulWidget {
-  const _Carousels({required this.time});
-
-  final LinkedScrollGroup time;
-
-  @override
-  State<_Carousels> createState() => _CarouselsState();
-}
-
-class _CarouselsState extends State<_Carousels> {
-  static const List<String> _tracks = <String>['Main hall', 'Studio', 'Lab'];
-
-  late final List<ScrollController> _controllers = <ScrollController>[
-    for (final _ in _tracks) widget.time.createController(),
-  ];
-
-  @override
-  void dispose() {
-    for (final c in _controllers) {
-      c.dispose();
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 16),
-      children: <Widget>[
-        for (var t = 0; t < _tracks.length; t++) ...<Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-            child: Text(
-              _tracks[t],
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ),
-          SizedBox(
-            height: 120,
-            child: ListView.builder(
-              key: ValueKey<String>('carousel-$t'),
-              scrollDirection: Axis.horizontal,
-              controller: _controllers[t],
-              itemExtent: TimetableScreen.slotWidth,
-              itemCount: TimetableScreen.slots,
-              itemBuilder: (_, int slot) => Card(
-                key: ValueKey<String>('slide-$t-$slot'),
-                child: Center(child: Text(TimetableScreen.slotLabel(slot))),
+        cellBuilder: (_, int room, int slot) {
+          final booked = TimetableScreen.isBooked(room, slot);
+          return Padding(
+            padding: const EdgeInsets.all(2),
+            child: DecoratedBox(
+              key: ValueKey<String>('cell-$room-$slot'),
+              decoration: BoxDecoration(
+                color: booked ? scheme.primaryContainer : null,
+                border: booked
+                    ? null
+                    : Border.all(color: scheme.outlineVariant, width: 0.5),
+                borderRadius: BorderRadius.circular(8),
               ),
+              child: booked
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          TimetableScreen.bookingTitle(room, slot),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: text.labelSmall?.copyWith(
+                            color: scheme.onPrimaryContainer,
+                          ),
+                        ),
+                      ),
+                    )
+                  : null,
             ),
-          ),
-        ],
-      ],
+          );
+        },
+      ),
     );
   }
 }

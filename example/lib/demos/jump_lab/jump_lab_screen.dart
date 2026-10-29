@@ -5,7 +5,7 @@ import 'package:scroll_atlas/scroll_atlas.dart';
 import '../demo_frame.dart';
 import 'jump_lab_controller.dart';
 
-/// D1 Jump lab: [AtlasListView] with an alignment marker, a scrollbar and
+/// Jump lab: [AtlasListView] with an alignment marker, a scrollbar and
 /// a readout of builds, landing error and time for the last jump.
 class JumpLabScreen extends StatefulWidget {
   const JumpLabScreen({super.key});
@@ -43,7 +43,7 @@ class _JumpLabScreenState extends State<JumpLabScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('D1 Jump lab')),
+      appBar: AppBar(title: const Text('Jump lab')),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
@@ -81,7 +81,7 @@ class _JumpLabScreenState extends State<JumpLabScreen> {
                       child: IgnorePointer(
                         child: Container(
                           height: 2,
-                          color: Colors.red,
+                          color: Theme.of(context).colorScheme.error,
                         ),
                       ),
                     ),

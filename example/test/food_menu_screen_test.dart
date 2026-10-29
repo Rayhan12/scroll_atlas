@@ -35,7 +35,7 @@ void main() {
     return seen.toSet().toList();
   }
 
-  testWidgets('D4 tap the last tab, then the first; one move each',
+  testWidgets('tap the last tab, then the first; one move each',
       (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: FoodMenuScreen()));
     expect(tabController(tester).index, 0);
@@ -50,7 +50,7 @@ void main() {
     expect(find.byKey(const ValueKey<String>('menu-header-0')), findsOneWidget);
   });
 
-  testWidgets('D4 tap Desserts from Starters moves the indicator once',
+  testWidgets('tap Desserts from Starters moves the indicator once',
       (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: FoodMenuScreen()));
     final desserts = menuSections.indexWhere((s) => s.title == 'Desserts');
@@ -62,7 +62,7 @@ void main() {
     );
   });
 
-  testWidgets('D4 scrolling by hand moves the active tab',
+  testWidgets('scrolling by hand moves the active tab',
       (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: FoodMenuScreen()));
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -900));

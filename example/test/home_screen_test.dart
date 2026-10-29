@@ -3,28 +3,43 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:scroll_atlas_example/demos/demo_catalog.dart';
 import 'package:scroll_atlas_example/main.dart';
 
+import 'open_demo.dart';
+
 void main() {
-  testWidgets('home lists demo tiles D1 through D6',
+  testWidgets('the gallery has a card per demo with its before and after',
       (WidgetTester tester) async {
     await tester.pumpWidget(const ScrollAtlasDemoApp());
-    expect(demoCatalog.length, 6);
+    expect(demoCatalog.length, 5);
     final scrollable = find.byType(Scrollable).first;
-    for (final DemoScreenSpec spec in demoCatalog) {
-      final tileTitle = '${spec.id} ${spec.title}';
-      await tester.scrollUntilVisible(
-        find.text(tileTitle),
-        500,
-        scrollable: scrollable,
+    for (final DemoSpec spec in demoCatalog) {
+      final card = find.byKey(ValueKey<String>('demo-card-${spec.slug}'));
+      await tester.scrollUntilVisible(card, 300, scrollable: scrollable);
+      for (final String line in <String>[spec.title, spec.problem]) {
+        expect(
+          find.descendant(of: card, matching: find.text(line)),
+          findsOneWidget,
+        );
+      }
+      expect(
+        find.descendant(
+          of: card,
+          matching: find.textContaining(spec.withAtlas, findRichText: true),
+        ),
+        findsOneWidget,
       );
-      expect(find.text(tileTitle), findsOneWidget);
     }
   });
 
-  testWidgets('D1 jump to index 50000 shows Item 50000',
+  testWidgets('the app builds in dark mode', (WidgetTester tester) async {
+    await tester
+        .pumpWidget(const ScrollAtlasDemoApp(themeMode: ThemeMode.dark));
+    final context = tester.element(find.text('scroll_atlas').first);
+    expect(Theme.of(context).brightness, Brightness.dark);
+  });
+
+  testWidgets('jump to index 50000 shows Item 50000',
       (WidgetTester tester) async {
-    await tester.pumpWidget(const ScrollAtlasDemoApp());
-    await tester.tap(find.textContaining('D1 Jump lab'));
-    await tester.pumpAndSettle();
+    await openDemo(tester, 'jump');
 
     await tester.enterText(find.byKey(const Key('jump_index_field')), '50000');
     await tester.tap(find.byKey(const Key('jump_button')));
@@ -40,16 +55,14 @@ void main() {
   });
 
   Future<double> openAt500(WidgetTester tester) async {
-    await tester.pumpWidget(const ScrollAtlasDemoApp());
-    await tester.tap(find.textContaining('D1 Jump lab'));
-    await tester.pumpAndSettle();
+    await openDemo(tester, 'jump');
     await tester.enterText(find.byKey(const Key('jump_index_field')), '500');
     await tester.tap(find.byKey(const Key('jump_button')));
     await tester.pumpAndSettle();
     return tester.getTopLeft(find.text('Item 500')).dy;
   }
 
-  testWidgets('D1 insert 20 at top keeps the reading position',
+  testWidgets('insert 20 at top keeps the reading position',
       (WidgetTester tester) async {
     final before = await openAt500(tester);
     await tester.ensureVisible(find.byKey(const Key('insert_button')));
@@ -59,7 +72,7 @@ void main() {
     expect(after, moreOrLessEquals(before, epsilon: 0.5));
   });
 
-  testWidgets('D1 growing images above does not move the view',
+  testWidgets('growing images above does not move the view',
       (WidgetTester tester) async {
     final before = await openAt500(tester);
     await tester.ensureVisible(find.byKey(const Key('grow_button')));
@@ -69,25 +82,15 @@ void main() {
     expect(after, moreOrLessEquals(before, epsilon: 0.5));
   });
 
-  testWidgets('D6 opens the chat at the first unread message',
+  testWidgets('opens the chat at the first unread message',
       (WidgetTester tester) async {
-    await tester.pumpWidget(const ScrollAtlasDemoApp());
-    final scrollable = find.byType(Scrollable).first;
-    await tester.scrollUntilVisible(
-      find.textContaining('D6 Chat'),
-      500,
-      scrollable: scrollable,
-    );
-    await tester.tap(find.textContaining('D6 Chat'));
-    await tester.pumpAndSettle();
+    await openDemo(tester, 'chat');
     expect(find.text('First unread'), findsOneWidget);
   });
 
-  testWidgets('D1 visible readout covers the item it jumped to',
+  testWidgets('visible readout covers the item it jumped to',
       (WidgetTester tester) async {
-    await tester.pumpWidget(const ScrollAtlasDemoApp());
-    await tester.tap(find.textContaining('D1 Jump lab'));
-    await tester.pumpAndSettle();
+    await openDemo(tester, 'jump');
 
     await tester.enterText(find.byKey(const Key('jump_index_field')), '1204');
     await tester.tap(find.byKey(const Key('jump_button')));

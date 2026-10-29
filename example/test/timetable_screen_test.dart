@@ -10,9 +10,6 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: TimetableScreen()));
   }
 
-  double leftOf(WidgetTester tester, Finder finder) =>
-      tester.getTopLeft(finder).dx;
-
   testWidgets('times stay above their cells after a fling',
       (WidgetTester tester) async {
     await open(tester);
@@ -35,6 +32,28 @@ void main() {
     expect(find.text('00:00'), findsNothing, reason: 'the fling moved');
   });
 
+  testWidgets('a diagonal fling moves both axes, headers in line',
+      (WidgetTester tester) async {
+    await open(tester);
+    await tester.fling(find.byKey(const ValueKey<String>('cell-2-2')),
+        const Offset(-300, -400), 2500);
+    await tester.pumpAndSettle();
+    expect(find.text('00:00'), findsNothing);
+    expect(find.text('Room 0'), findsNothing);
+    final cells = find.byWidgetPredicate((Widget w) =>
+        w.key is ValueKey<String> &&
+        (w.key! as ValueKey<String>).value.startsWith('cell-'));
+    final first = cells.evaluate().first.widget.key! as ValueKey<String>;
+    final parts = first.value.split('-');
+    final room = find.text('Room ${parts[1]}');
+    if (room.evaluate().isNotEmpty) {
+      expect(
+        tester.getCenter(find.byKey(first)).dy,
+        moreOrLessEquals(tester.getCenter(room).dy, epsilon: 0.5),
+      );
+    }
+  });
+
   testWidgets('rows built after scrolling down are in line',
       (WidgetTester tester) async {
     await open(tester);
@@ -54,17 +73,5 @@ void main() {
       final left = tester.getRect(find.byWidget(e.widget)).left - 2;
       expect(left, moreOrLessEquals(header.left, epsilon: 0.5));
     }
-  });
-
-  testWidgets('synced carousels move together', (WidgetTester tester) async {
-    await open(tester);
-    await tester.tap(find.text('Synced carousels'));
-    await tester.pumpAndSettle();
-    await tester.drag(find.byKey(const ValueKey<String>('carousel-1')),
-        const Offset(-400, 0));
-    await tester.pumpAndSettle();
-    final a = leftOf(tester, find.byKey(const ValueKey<String>('slide-0-6')));
-    expect(leftOf(tester, find.byKey(const ValueKey<String>('slide-1-6'))), a);
-    expect(leftOf(tester, find.byKey(const ValueKey<String>('slide-2-6'))), a);
   });
 }

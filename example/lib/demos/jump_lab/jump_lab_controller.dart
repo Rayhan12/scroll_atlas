@@ -4,7 +4,9 @@ import 'package:flutter/widgets.dart';
 import 'package:scroll_atlas/fixtures.dart';
 import 'package:scroll_atlas/scroll_atlas.dart';
 
-/// State and scroll actions for the D1 Jump lab demo, on the public widgets
+import 'feed_item.dart';
+
+/// State and scroll actions for the Jump lab demo
 /// ([AtlasListView], [AtlasController], [AtlasScrollbar]).
 ///
 /// Items keep a stable id: inserted items get ids -1, -2 and so on, so the
@@ -147,7 +149,7 @@ final class JumpLabController {
     void visit(Element element) {
       if (item != null) return;
       final widget = element.widget;
-      if (widget is FixtureItem && widget.index == id) {
+      if (widget is FeedItem && widget.index == id) {
         item = element.findRenderObject() as RenderBox?;
         return;
       }
@@ -176,7 +178,7 @@ final class JumpLabController {
           itemBuilder: buildCounter.wrap(
             (BuildContext context, int index) {
               final id = idAt(index);
-              return FixtureItem(index: id, extent: extentOf(id));
+              return FeedItem(index: id, extent: extentOf(id));
             },
           ),
         ),

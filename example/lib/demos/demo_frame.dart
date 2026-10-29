@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 
-import 'demo_catalog.dart';
+import '../app/compare_row.dart';
+import '../app/demo_theme.dart';
+import 'demo_spec.dart';
 
 /// Debug values a demo screen can report to its [DemoFrame].
 class DemoDebug extends ChangeNotifier {
@@ -27,13 +29,13 @@ class _DemoDebugScope extends InheritedNotifier<DemoDebug> {
       : super(notifier: debug);
 }
 
-/// Wraps a demo screen with a "What to try" card and a debug overlay
-/// toggle (built items, last jump error, frame time), the same on every
-/// screen.
+/// Wraps a demo screen with a bar that says what scroll_atlas fixes, a
+/// "How it helps" card and a debug overlay (built items, last jump error,
+/// frame time), the same on every screen.
 class DemoFrame extends StatefulWidget {
   const DemoFrame({required this.spec, required this.child, super.key});
 
-  final DemoScreenSpec spec;
+  final DemoSpec spec;
   final Widget child;
 
   @override
@@ -56,26 +58,28 @@ class _DemoFrameState extends State<DemoFrame> {
   Widget build(BuildContext context) {
     return _DemoDebugScope(
       debug: _debug,
-      // The chips sit in a strip under the screen, so they never cover its
-      // own bottom controls (such as the D6 composer); the panels they open
+      // The bar sits under the screen, so it never covers the screen's own
+      // bottom controls (such as the chat composer); the panels it opens
       // float over the screen.
       child: Column(
-        children: [
+        children: <Widget>[
           Expanded(
             child: Stack(
-              children: [
+              children: <Widget>[
                 KeyedSubtree(key: _screenKey, child: widget.child),
                 Positioned(
-                  left: 8,
-                  right: 8,
-                  bottom: 8,
+                  left: Gap.s,
+                  right: Gap.s,
+                  bottom: Gap.s,
                   child: Material(
                     type: MaterialType.transparency,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
+                      children: <Widget>[
                         if (_showTips) _TipsCard(spec: widget.spec),
+                        if (_showTips && _showDebug)
+                          const SizedBox(height: Gap.s),
                         if (_showDebug)
                           _DebugPanel(debug: _debug, screenKey: _screenKey),
                       ],
@@ -85,32 +89,12 @@ class _DemoFrameState extends State<DemoFrame> {
               ],
             ),
           ),
-          Material(
-            elevation: 4,
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    FilterChip(
-                      key: const Key('what_to_try_toggle'),
-                      label: const Text('What to try'),
-                      selected: _showTips,
-                      onSelected: (on) => setState(() => _showTips = on),
-                    ),
-                    const SizedBox(width: 8),
-                    FilterChip(
-                      key: const Key('debug_toggle'),
-                      label: const Text('Debug'),
-                      selected: _showDebug,
-                      onSelected: (on) => setState(() => _showDebug = on),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          _WhyBar(
+            spec: widget.spec,
+            showTips: _showTips,
+            showDebug: _showDebug,
+            onTips: () => setState(() => _showTips = !_showTips),
+            onDebug: () => setState(() => _showDebug = !_showDebug),
           ),
         ],
       ),
@@ -118,27 +102,104 @@ class _DemoFrameState extends State<DemoFrame> {
   }
 }
 
-class _TipsCard extends StatelessWidget {
-  const _TipsCard({required this.spec});
+/// The strip under every demo: what scroll_atlas fixes here, plus the
+/// "How it helps" and "Debug" toggles.
+class _WhyBar extends StatelessWidget {
+  const _WhyBar({
+    required this.spec,
+    required this.showTips,
+    required this.showDebug,
+    required this.onTips,
+    required this.onDebug,
+  });
 
-  final DemoScreenSpec spec;
+  final DemoSpec spec;
+  final bool showTips;
+  final bool showDebug;
+  final VoidCallback onTips;
+  final VoidCallback onDebug;
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: scheme.surfaceContainer,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(Gap.l, Gap.xs, Gap.xs, Gap.xs),
+          child: Row(
+            children: <Widget>[
+              Icon(Icons.check_circle, size: 18, color: scheme.primary),
+              const SizedBox(width: Gap.s),
+              Expanded(
+                child: Text(
+                  spec.withAtlas,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+              IconButton(
+                key: const Key('what_to_try_toggle'),
+                tooltip: 'How it helps',
+                isSelected: showTips,
+                icon: const Icon(Icons.lightbulb_outline),
+                selectedIcon: const Icon(Icons.lightbulb),
+                onPressed: onTips,
+              ),
+              IconButton(
+                key: const Key('debug_toggle'),
+                tooltip: 'Debug',
+                isSelected: showDebug,
+                icon: const Icon(Icons.speed_outlined),
+                selectedIcon: const Icon(Icons.speed),
+                onPressed: onDebug,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The problem, the plain ListView result, the scroll_atlas result and
+/// what to try.
+class _TipsCard extends StatelessWidget {
+  const _TipsCard({required this.spec});
+
+  final DemoSpec spec;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Card(
       key: const Key('what_to_try_card'),
+      elevation: 3,
+      color: theme.colorScheme.surfaceContainerHigh,
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(Gap.l),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('What to try', style: Theme.of(context).textTheme.titleSmall),
-            const SizedBox(height: 4),
-            Text(spec.whatToTry),
-            const SizedBox(height: 4),
-            Text(
-              'Coming in a later version',
-              style: Theme.of(context).textTheme.bodySmall,
+          children: <Widget>[
+            Text(spec.problem, style: theme.textTheme.titleSmall),
+            const SizedBox(height: Gap.m),
+            CompareRow.listView(spec.withListView),
+            const SizedBox(height: Gap.s),
+            CompareRow.atlas(spec.withAtlas),
+            const SizedBox(height: Gap.m),
+            Text.rich(
+              TextSpan(
+                children: <InlineSpan>[
+                  const TextSpan(
+                    text: 'Try: ',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  TextSpan(text: spec.whatToTry),
+                ],
+              ),
+              style: theme.textTheme.bodySmall,
             ),
           ],
         ),
@@ -203,7 +264,7 @@ class _DebugPanelState extends State<_DebugPanel> {
         final error = widget.debug.lastJumpError;
         return Card(
           key: const Key('debug_overlay'),
-          color: Colors.black87,
+          color: Colors.black.withValues(alpha: 0.85),
           child: Padding(
             padding: const EdgeInsets.all(8),
             child: DefaultTextStyle(

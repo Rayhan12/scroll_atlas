@@ -31,19 +31,24 @@ final class ChatThread {
   /// one far above it.
   factory ChatThread.seeded({int count = 2000, int unread = 12}) {
     const lines = <String>[
-      'Morning! Did the build pass?',
-      'Yes, all green on the simulator.',
-      'Can you check the jump to item 73,210?',
-      'It lands on the line marker, no snap at the end.',
-      'Nice. What about inserts above?',
-      'The message I am reading stays still.',
-      'Pushing the notes now.\nTwo more lines here.\nAnd a third.',
+      'Morning! Did last night\'s build pass?',
+      'Yes, all green. Release notes are in the doc.',
+      'Can you check the checkout screen on the small iPhone?',
+      'On it. The pay button sits right above the keyboard now.',
+      'Nice. Design review moved to 3 pm.',
+      'Works for me, I will bring the new onboarding flow.',
+      'Pushed the fix for the tab flicker.\nTested on Android and iOS.\n'
+          'Ready for review.',
+      'Lunch at the usual place?',
+      'Sure, 1:15?',
+      'QA found one crash on Android 10, looking now.',
+      'Found it: a null image URL. Patch is up.',
     ];
     final messages = <ChatMessage>[
       for (var id = 0; id < count; id++)
         ChatMessage(
           id: id,
-          text: '#$id ${lines[id % lines.length]}',
+          text: lines[(id * 5) % lines.length],
           mine: id % 3 == 0,
           replyTo: id % 7 == 6 && id >= 400 ? id - 400 + (id % 50) : null,
         ),
@@ -57,6 +62,9 @@ final class ChatThread {
   final int firstUnreadId;
 
   int get length => _messages.length;
+
+  /// Message with [id].
+  ChatMessage byId(int id) => _messages[id];
 
   /// Message at [index] of the reversed list (0 is the newest).
   ChatMessage atIndex(int index) => _messages[_messages.length - 1 - index];

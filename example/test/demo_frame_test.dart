@@ -3,39 +3,34 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:scroll_atlas_example/demos/demo_catalog.dart';
 import 'package:scroll_atlas_example/main.dart';
 
-void main() {
-  Future<void> openDemo(WidgetTester tester, DemoScreenSpec spec) async {
-    final title = find.text('${spec.id} ${spec.title}');
-    await tester.scrollUntilVisible(title, 300,
-        scrollable: find.byType(Scrollable).first);
-    await tester.tap(title);
-    await tester.pumpAndSettle();
-  }
+import 'open_demo.dart';
 
-  testWidgets('every screen has What to try and Debug', (tester) async {
+void main() {
+  testWidgets('every screen has How it helps and Debug', (tester) async {
     tester.view.physicalSize = const Size(1000, 1600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(const ScrollAtlasDemoApp());
     for (final spec in demoCatalog) {
-      await openDemo(tester, spec);
+      await openDemo(tester, spec.slug, pumpApp: false);
       await tester.tap(find.byKey(const Key('what_to_try_toggle')));
       await tester.tap(find.byKey(const Key('debug_toggle')));
       await tester.pumpAndSettle();
-      expect(find.text(spec.whatToTry), findsWidgets, reason: spec.id);
+      expect(
+          find.textContaining(spec.whatToTry, findRichText: true), findsWidgets,
+          reason: spec.slug);
       final built = tester
           .widget<Text>(find.textContaining('Built items: '))
           .data!
           .replaceFirst('Built items: ', '');
-      expect(int.parse(built), greaterThan(0), reason: spec.id);
+      expect(int.parse(built), greaterThan(0), reason: spec.slug);
       await tester.pageBack();
       await tester.pumpAndSettle();
     }
   });
 
-  testWidgets('D1 reports its jump error to the overlay', (tester) async {
-    await tester.pumpWidget(const ScrollAtlasDemoApp());
-    await openDemo(tester, demoCatalog.first);
+  testWidgets('reports its jump error to the overlay', (tester) async {
+    await openDemo(tester, 'jump');
     await tester.tap(find.byKey(const Key('debug_toggle')));
     await tester.pumpAndSettle();
     expect(find.text('Last jump error: -'), findsOneWidget);

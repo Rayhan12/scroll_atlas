@@ -6,8 +6,9 @@ import 'package:scroll_atlas/scroll_atlas.dart';
 
 import 'chat_thread.dart';
 
-/// D6 Chat: a reversed [AtlasListView] that opens at the first unread
-/// message, animates to a quoted message and flashes it, and stays pinned to the bottom when a message arrives.
+/// Chat: a reversed [AtlasListView] that opens at the first unread
+/// message, animates to a quoted message and flashes it, and stays pinned
+/// to the bottom when a message arrives.
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key, this.thread});
 
@@ -67,7 +68,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('D6 Chat')),
+      appBar: AppBar(title: const Text('Chat')),
       body: Column(
         children: <Widget>[
           Expanded(
@@ -86,6 +87,9 @@ class _ChatScreenState extends State<ChatScreen> {
                   return _MessageTile(
                     key: ChatThread.keyOf(message),
                     message: message,
+                    quoted: message.replyTo == null
+                        ? null
+                        : _thread.byId(message.replyTo!),
                     firstUnread: message.id == _thread.firstUnreadId,
                     highlighted: _highlighted,
                     onQuoteTap: _jumpToQuote,
@@ -104,6 +108,7 @@ class _ChatScreenState extends State<ChatScreen> {
 class _MessageTile extends StatelessWidget {
   const _MessageTile({
     required this.message,
+    required this.quoted,
     required this.firstUnread,
     required this.highlighted,
     required this.onQuoteTap,
@@ -111,6 +116,9 @@ class _MessageTile extends StatelessWidget {
   });
 
   final ChatMessage message;
+
+  /// The message this one replies to, if any.
+  final ChatMessage? quoted;
   final bool firstUnread;
   final ValueListenable<int?> highlighted;
   final ValueChanged<int> onQuoteTap;
@@ -152,7 +160,23 @@ class _MessageTile extends StatelessWidget {
                     left: BorderSide(color: scheme.primary, width: 3),
                   ),
                 ),
-                child: Text('Reply to #$replyTo (tap to jump)'),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      quoted!.mine ? 'You' : 'Nadia',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: scheme.primary,
+                          ),
+                    ),
+                    Text(
+                      quoted!.text,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
               ),
             ),
           Text(message.text),
