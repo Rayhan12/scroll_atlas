@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'chat/chat_screen.dart';
 import 'contacts/contacts_screen.dart';
+import 'food_menu/food_menu_screen.dart';
 import 'jump_lab/jump_lab_screen.dart';
 import 'placeholder_demo_screen.dart';
 
@@ -65,7 +66,7 @@ final List<DemoScreenSpec> demoCatalog = <DemoScreenSpec>[
         'to scroll',
     whatToTry: 'Tap last tab then first; scroll slowly both ways',
     tickets: '',
-    builder: _placeholderBuilder('D4'),
+    builder: (BuildContext context) => const FoodMenuScreen(),
   ),
   DemoScreenSpec(
     id: 'D5',

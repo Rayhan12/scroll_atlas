@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:scroll_atlas/scroll_atlas.dart';
 
 import 'jump_lab_controller.dart';
 
@@ -63,6 +65,7 @@ class _JumpLabScreenState extends State<JumpLabScreen> {
             },
           ),
           _Readout(controller: _controller),
+          _VisibleReadout(positions: _controller.atlas.positions),
           Expanded(
             child: LayoutBuilder(
               builder: (BuildContext context, BoxConstraints constraints) {
@@ -210,6 +213,30 @@ class _Readout extends StatelessWidget {
         key: const Key('jump_readout'),
         textAlign: TextAlign.center,
       ),
+    );
+  }
+}
+
+/// First and last visible item, from [AtlasController.positions].
+class _VisibleReadout extends StatelessWidget {
+  const _VisibleReadout({required this.positions});
+
+  final ValueListenable<List<AtlasItemPosition>> positions;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<List<AtlasItemPosition>>(
+      valueListenable: positions,
+      builder: (BuildContext context, List<AtlasItemPosition> visible, _) {
+        final text = visible.isEmpty
+            ? 'Visible: -'
+            : 'Visible: ${visible.first.index} to ${visible.last.index}';
+        return Text(
+          text,
+          key: const Key('visible_readout'),
+          textAlign: TextAlign.center,
+        );
+      },
     );
   }
 }

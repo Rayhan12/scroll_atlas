@@ -1,4 +1,5 @@
 import '../core/index_fraction.dart';
+import '../core/item_position.dart';
 import '../core/scroll_target.dart';
 
 /// What a controller can ask of any attached Atlas target sliver (an Atlas
@@ -42,6 +43,10 @@ abstract interface class AtlasListLayout implements AtlasTargetLayout {
 
   /// Visible items in fractional indexes, or null before layout.
   IndexSpan? get visibleSpan;
+
+  /// Built items with at least one pixel in the unobstructed viewport, in
+  /// index order, as of the last layout.
+  List<AtlasItemPosition> get visiblePositions;
 }
 
 /// Where an Atlas sliver registers its layout so that a controller can
@@ -52,4 +57,8 @@ abstract interface class AtlasLayoutRegistry {
 
   /// Called when the sliver detaches.
   void detachLayout(AtlasTargetLayout layout);
+
+  /// Called after each layout of the sliver, so that listeners of what is
+  /// visible can be told once the frame is done.
+  void layoutChanged(AtlasTargetLayout layout);
 }

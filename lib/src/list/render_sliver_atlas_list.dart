@@ -4,6 +4,7 @@ import 'package:flutter/rendering.dart';
 
 import '../core/extent_cache.dart';
 import '../core/index_fraction.dart';
+import '../core/item_position.dart';
 import '../core/scroll_target.dart';
 import '../slivers/atlas_placement.dart';
 import 'atlas_list_layout.dart';
@@ -228,6 +229,36 @@ class RenderSliverAtlasList extends RenderSliverList
 
   @override
   void performLayout() {
+    _layout();
+    _registry?.layoutChanged(this);
+  }
+
+  @override
+  List<AtlasItemPosition> get visiblePositions {
+    final viewport = placementViewportExtent;
+    if (viewport == null || firstChild == null) return const [];
+    final origin = virtualScrollOffset;
+    final paintStart = math.max(0.0, -origin);
+    final obstruction = math.max(0.0, paintStart + constraints.overlap);
+    final positions = <AtlasItemPosition>[];
+    for (var child = firstChild; child != null; child = childAfter(child)) {
+      final offset = childScrollOffset(child);
+      if (offset == null || !child.hasSize) continue;
+      final leading = offset - origin;
+      final position = PositionMath.visible(
+        sliverId: id,
+        index: indexOf(child),
+        leading: leading,
+        trailing: leading + paintExtentOf(child),
+        obstruction: obstruction,
+        viewportExtent: viewport,
+      );
+      if (position != null) positions.add(position);
+    }
+    return positions;
+  }
+
+  void _layout() {
     beginPlacementLayout();
     _scrollOffset = constraints.scrollOffset;
     _cache.itemCount = itemCount;

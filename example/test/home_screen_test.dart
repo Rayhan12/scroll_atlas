@@ -82,4 +82,25 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('First unread'), findsOneWidget);
   });
+
+  testWidgets('D1 visible readout covers the item it jumped to',
+      (WidgetTester tester) async {
+    await tester.pumpWidget(const ScrollAtlasDemoApp());
+    await tester.tap(find.textContaining('D1 Jump lab'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('jump_index_field')), '1204');
+    await tester.tap(find.byKey(const Key('jump_button')));
+    await tester.pumpAndSettle();
+
+    final text =
+        tester.widget<Text>(find.byKey(const Key('visible_readout'))).data!;
+    final match = RegExp(r'Visible: (\d+) to (\d+)').firstMatch(text)!;
+    final first = int.parse(match.group(1)!);
+    final last = int.parse(match.group(2)!);
+    expect(first, lessThanOrEqualTo(1204));
+    expect(last, greaterThanOrEqualTo(1204));
+    expect(find.text('Item $first'), findsOneWidget);
+    expect(find.text('Item $last'), findsOneWidget);
+  });
 }

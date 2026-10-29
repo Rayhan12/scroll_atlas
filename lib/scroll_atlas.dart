@@ -21,6 +21,13 @@
 ///   target.
 /// * Obstruction-aware alignment: targets land below pinned app bars and
 ///   stuck headers unless `respectPinned` is false.
+///
+/// What is visible and navigation that follows it:
+///
+/// * [AtlasController.positions], the visible items of every list with
+///   fractional edges, told at most once per frame.
+/// * [AtlasScrollSpy], the active section, and [AtlasTabBar], tabs that
+///   follow the sections and jump to them.
 library;
 
 import 'src/core/atlas_target.dart';
@@ -29,6 +36,8 @@ import 'src/list/atlas_list_view.dart';
 import 'src/list/atlas_options.dart';
 import 'src/list/atlas_scrollbar.dart';
 import 'src/list/sliver_atlas_list.dart';
+import 'src/navigation/atlas_scroll_spy.dart';
+import 'src/navigation/atlas_tab_bar.dart';
 import 'src/slivers/atlas_anchor.dart';
 import 'src/slivers/atlas_scope.dart';
 import 'src/slivers/sliver_atlas_section.dart';
@@ -37,6 +46,7 @@ export 'src/core/alignment_math.dart';
 export 'src/core/atlas_target.dart';
 export 'src/core/extent_estimator.dart';
 export 'src/core/index_fraction.dart';
+export 'src/core/item_position.dart' show AtlasItemPosition, AtlasItemPositions;
 export 'src/core/scroll_target.dart';
 export 'src/engine/list_engine.dart';
 export 'src/list/atlas_controller.dart';
@@ -44,6 +54,8 @@ export 'src/list/atlas_list_view.dart';
 export 'src/list/atlas_options.dart';
 export 'src/list/atlas_scrollbar.dart';
 export 'src/list/sliver_atlas_list.dart';
+export 'src/navigation/atlas_scroll_spy.dart';
+export 'src/navigation/atlas_tab_bar.dart';
 export 'src/slivers/atlas_anchor.dart' show AtlasAnchor;
 export 'src/slivers/atlas_scope.dart';
 export 'src/slivers/sliver_atlas_section.dart'

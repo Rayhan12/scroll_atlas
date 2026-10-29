@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
@@ -8,10 +9,12 @@ import '../core/atlas_target.dart';
 import '../core/glide_path.dart';
 import '../core/id_registry.dart';
 import '../core/index_fraction.dart';
+import '../core/item_position.dart';
 import '../core/scroll_target.dart';
 import '../engine/list_engine.dart';
 import 'atlas_list_layout.dart';
 import 'atlas_options.dart';
+import 'atlas_positions.dart';
 import 'glide_scroll_activity.dart';
 
 /// Jumps and animates Atlas lists and other Atlas targets.
@@ -27,7 +30,9 @@ class AtlasController implements AtlasLayoutRegistry, IndexJumper {
   /// the controller creates its own and disposes it in [dispose].
   AtlasController({ScrollController? scrollController})
       : _ownsScrollController = scrollController == null,
-        scrollController = scrollController ?? ScrollController();
+        scrollController = scrollController ?? ScrollController() {
+    _positions = AtlasPositionsNotifier(_collectPositions);
+  }
 
   /// The pixel controller of the scroll view that hosts the targets.
   final ScrollController scrollController;
@@ -36,6 +41,7 @@ class AtlasController implements AtlasLayoutRegistry, IndexJumper {
   final IdRegistry<AtlasTargetLayout> _layouts =
       IdRegistry<AtlasTargetLayout>();
   _Jump? _pendingJump;
+  late final AtlasPositionsNotifier _positions;
 
   /// Whether a target sliver is attached.
   bool get isAttached =>
@@ -53,8 +59,40 @@ class AtlasController implements AtlasLayoutRegistry, IndexJumper {
   }
 
   @override
-  void detachLayout(AtlasTargetLayout layout) =>
-      _layouts.remove(layout.id, layout);
+  void detachLayout(AtlasTargetLayout layout) {
+    _layouts.remove(layout.id, layout);
+    _positions.schedule();
+  }
+
+  @override
+  void layoutChanged(AtlasTargetLayout layout) => _positions.schedule();
+
+  /// The visible items of every attached Atlas list, each tagged with its
+  /// list's id. Fractions are relative to the unobstructed
+  /// viewport, as with scrollable_positioned_list's `ItemPosition`.
+  /// Listeners are told at most once per frame, after layout.
+  /// Use `inSliver`, `firstFullyVisible` and `mostVisible` to query it.
+  ValueListenable<List<AtlasItemPosition>> get positions => _positions;
+
+  List<AtlasItemPosition> _collectPositions() => [
+        for (final layout in _layouts.values)
+          if (layout is AtlasListLayout) ...layout.visiblePositions,
+      ];
+
+  /// Distance from the viewport's leading edge to the leading edge of the
+  /// sliver with [id] (exact when built, estimated otherwise), or null
+  /// when no such sliver is attached or the view has no position yet.
+  double? leadingEdgeOf(String id) {
+    final layout = _layouts[id];
+    if (layout == null || !scrollController.hasClients) return null;
+    final position = scrollController.position;
+    if (!position.hasPixels) return null;
+    return layout.leadingOffsetOf(0) - position.pixels;
+  }
+
+  /// What is pinned above the sliver with [id] once it is scrolled, or
+  /// null when no such sliver is attached.
+  double? obstructionAbove(String id) => _layouts[id]?.pinnedObstruction;
 
   /// The list that index based calls address: the unnamed list, or the
   /// only list.
@@ -301,6 +339,7 @@ class AtlasController implements AtlasLayoutRegistry, IndexJumper {
 
   /// Releases the scroll controller if this controller created it.
   void dispose() {
+    _positions.dispose();
     if (_ownsScrollController) scrollController.dispose();
   }
 }

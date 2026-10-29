@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0-dev.1 (unreleased)
+
+- `AtlasController.positions`, a `ValueListenable<List<AtlasItemPosition>>` of the visible items in every attached list, with `itemLeadingEdge` and `itemTrailingEdge` relative to the viewport below pinned headers (same semantics as scrollable_positioned_list's `ItemPosition`).
+- Positions notify at most once per frame and only when they change; `inSliver`, `firstFullyVisible` and `mostVisible` helpers.
+- `AtlasScrollSpy`, the active section is the last one whose header has reached the bottom of the pinned area; a short last section wins at the end of the scroll.
+- `AtlasTabBar`, a `TabBar` kept in sync with the scroll; a tap locks the spy, animates to the section and moves the indicator once; a drag during the animation hands control back to the spy.
+- Example D1 shows a "Visible: a to b" readout; D4 Food menu (collapsing hero, pinned tabs over 8 sections).
+
 ## 0.2.0-dev.1 (unreleased)
 
 - `AtlasScrollView` and `AtlasScope`. Atlas slivers register by id, and `AtlasController.jumpTo(target: AtlasTarget.item(id, index))` resolves a target anywhere in a `CustomScrollView`, including slivers that were never built. Duplicate ids fail with a clear error.

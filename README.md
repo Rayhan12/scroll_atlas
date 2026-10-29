@@ -149,6 +149,22 @@ AtlasTabBar(
 );
 ```
 
+Put it in a pinned `SliverAppBar.bottom`. A tap locks the scroll spy, animates to the section and moves the indicator once; dragging during the animation hands control back to the spy. A short last section becomes active at the end of the scroll. For your own UI, use `AtlasScrollSpy(controller: atlas, sectionIds: ids)`, a `ValueListenable<int>` of the active section.
+
+### Which items are visible
+
+```dart
+ValueListenableBuilder<List<AtlasItemPosition>>(
+  valueListenable: atlas.positions,
+  builder: (context, positions, _) {
+    final first = positions.inSliver('messages').firstFullyVisible;
+    return Text('First fully visible: ${first?.index}');
+  },
+);
+```
+
+Each `AtlasItemPosition` has the sliver id, the index and `itemLeadingEdge` and `itemTrailingEdge` as fractions of the viewport below pinned headers, like `ItemPosition` in scrollable_positioned_list. The list updates at most once per frame. `firstFullyVisible` and `mostVisible` cover the usual needs.
+
 ### Linked scrollables
 
 ```dart
@@ -207,7 +223,7 @@ What the other packages' own docs say:
 
 scroll_atlas aims to combine id-based targets, sticky-aware alignment, scroll-synced tabs, linked controllers and a drop-in layer for the two archived Google packages in one maintained package. Speed comparisons will appear here only after they are measured with the benchmark app on real devices, with links to the raw results.
 
-Progress so far (headless test runs and an iOS simulator in debug mode, not real devices yet): `AtlasListView` lands every jump in one frame within 0.5 px while building at most 16 items, animates across 80,000 items without a snap at the end (last frame move 0.11 px headless, 1.73 px on the iOS simulator), and keeps the item you are reading still when 20 items are inserted above it. Across 26 sticky sections under a pinned bar, 500 of 500 jumps land in one frame with no target hidden under a header (B4, headless). Tables and raw files: [`benchmark/README.md`](benchmark/README.md).
+Progress so far (headless test runs and an iOS simulator in debug mode, not real devices yet): `AtlasListView` lands every jump in one frame within 0.5 px while building at most 16 items, animates across 80,000 items without a snap at the end (last frame move 0.11 px headless, 1.73 px on the iOS simulator), and keeps the item you are reading still when 20 items are inserted above it. Across 26 sticky sections under a pinned bar, 500 of 500 jumps land in one frame with no target hidden under a header (B4, headless). Tapping a tab moves the indicator exactly once (widget tests). Tables and raw files: [`benchmark/README.md`](benchmark/README.md).
 
 ## Example app
 
