@@ -1,13 +1,13 @@
 import 'dart:math' as math;
 
 import 'package:flutter/rendering.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/widgets.dart';
 
 import '../core/sticky_header_math.dart';
 import '../list/atlas_list_layout.dart';
 import 'atlas_placement.dart';
 import 'atlas_scope.dart';
+import 'atlas_section_scope.dart';
 import 'atlas_target_sliver.dart';
 
 /// Builds a section header. [stuckAmount] goes from 0 (the header scrolls
@@ -16,6 +16,12 @@ typedef AtlasHeaderBuilder = Widget Function(
   BuildContext context,
   double stuckAmount,
 );
+
+/// Receives the header stuck amount during section layout.
+abstract interface class AtlasSectionStuckClient {
+  /// Called from layout when [stuckAmount] changes by more than 0.001.
+  void updateStuckAmount(double stuckAmount);
+}
 
 /// A section whose [header] sticks below whatever is pinned above it while
 /// its [sliver] scrolls, and is pushed off by the end of the section, so
@@ -62,38 +68,29 @@ class SliverAtlasSection extends StatefulWidget {
   State<SliverAtlasSection> createState() => _SliverAtlasSectionState();
 }
 
-class _SliverAtlasSectionState extends State<SliverAtlasSection> {
-  final ValueNotifier<double> _stuck = ValueNotifier<double>(0);
-  bool _updateScheduled = false;
-  double _latest = 0;
+class _SliverAtlasSectionState extends State<SliverAtlasSection>
+    implements AtlasSectionStuckClient {
+  double _stuck = 0;
 
-  void _onStuckAmount(double value) {
-    _latest = value;
-    if (_updateScheduled || (value - _stuck.value).abs() < 0.001) return;
-    // Layout cannot rebuild widgets: update after this frame.
-    _updateScheduled = true;
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      _updateScheduled = false;
-      if (mounted) _stuck.value = _latest;
-    });
+  @override
+  void updateStuckAmount(double value) {
+    if ((value - _stuck).abs() < 0.001) return;
+    _stuck = value;
   }
 
   @override
-  void dispose() {
-    _stuck.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => _AtlasSectionLayout(
-        id: widget.id,
-        registry: widget.controller ?? AtlasScope.maybeOf(context),
-        onStuckAmount: _onStuckAmount,
-        header: ValueListenableBuilder<double>(
-          valueListenable: _stuck,
-          builder: (context, stuck, _) => widget.header(context, stuck),
+  Widget build(BuildContext context) => AtlasSectionScope(
+        sectionId: widget.id,
+        child: AtlasSectionListRegistry(
+          child: _AtlasSectionLayout(
+            id: widget.id,
+            registry: widget.controller ?? AtlasScope.maybeOf(context),
+            stuckClient: this,
+            sectionStateElement: context as Element,
+            header: widget.header(context, _stuck),
+            sliver: widget.sliver,
+          ),
         ),
-        sliver: widget.sliver,
       );
 }
 
@@ -111,14 +108,16 @@ class _AtlasSectionLayout extends SlottedMultiChildRenderObjectWidget<
   const _AtlasSectionLayout({
     required this.id,
     required this.registry,
-    required this.onStuckAmount,
+    required this.stuckClient,
+    required this.sectionStateElement,
     required this.header,
     required this.sliver,
   });
 
   final String id;
   final AtlasLayoutRegistry? registry;
-  final ValueChanged<double> onStuckAmount;
+  final AtlasSectionStuckClient stuckClient;
+  final Element sectionStateElement;
   final Widget header;
   final Widget sliver;
 
@@ -136,7 +135,8 @@ class _AtlasSectionLayout extends SlottedMultiChildRenderObjectWidget<
       RenderSliverAtlasSection(
         id: id,
         registry: registry,
-        onStuckAmount: onStuckAmount,
+        stuckClient: stuckClient,
+        sectionStateElement: sectionStateElement,
       );
 
   @override
@@ -147,7 +147,8 @@ class _AtlasSectionLayout extends SlottedMultiChildRenderObjectWidget<
     renderObject
       ..id = id
       ..registry = registry
-      ..onStuckAmount = onStuckAmount;
+      ..stuckClient = stuckClient
+      ..sectionStateElement = sectionStateElement;
   }
 }
 
@@ -165,15 +166,19 @@ class RenderSliverAtlasSection extends RenderSliver
   /// Creates the render object.
   RenderSliverAtlasSection({
     required String id,
-    required this.onStuckAmount,
+    required this.stuckClient,
+    required Element sectionStateElement,
     AtlasLayoutRegistry? registry,
-  }) {
+  }) : _sectionStateElement = sectionStateElement {
     this.id = id;
     this.registry = registry;
   }
 
-  /// Receives the header's stuck amount after each layout.
-  ValueChanged<double> onStuckAmount;
+  /// Receives the header's stuck amount during layout.
+  AtlasSectionStuckClient stuckClient;
+
+  Element _sectionStateElement;
+  set sectionStateElement(Element value) => _sectionStateElement = value;
 
   RenderBox? get _header => childForSlot(AtlasSectionSlot.header) as RenderBox?;
   RenderSliver? get _body =>
@@ -182,6 +187,9 @@ class RenderSliverAtlasSection extends RenderSliver
   double _headerExtent = 0;
   double _headerPosition = 0;
   double _bodyPosition = 0;
+
+  /// Stuck amount from the latest layout pass, for the header builder.
+  double layoutStuck = 0;
 
   @override
   double stickyExtentAbove(RenderObject child) =>
@@ -194,13 +202,39 @@ class RenderSliverAtlasSection extends RenderSliver
     }
   }
 
+  void _syncStuckDuringLayout({
+    required SliverConstraints c,
+    required double headerExtent,
+    required double sectionExtent,
+  }) {
+    final headerPosition = StickyHeaderMath.headerPaintOffset(
+      scrollOffset: c.scrollOffset,
+      overlap: c.overlap,
+      headerExtent: headerExtent,
+      sectionExtent: sectionExtent,
+    );
+    final stuck = StickyHeaderMath.stuckAmount(
+      headerPaintOffset: headerPosition,
+      scrollOffset: c.scrollOffset,
+      headerExtent: headerExtent,
+    );
+    if ((layoutStuck - stuck).abs() < 0.001) return;
+    layoutStuck = stuck;
+    invokeLayoutCallback<SliverConstraints>((_) {
+      _sectionStateElement.owner!.buildScope(_sectionStateElement, () {
+        stuckClient.updateStuckAmount(stuck);
+        _sectionStateElement.markNeedsBuild();
+      });
+    });
+  }
+
   @override
   void performLayout() {
     beginPlacementLayout();
     final c = constraints;
     final header = _header;
     final body = _body;
-    var headerExtent = 0.0;
+    var headerExtent = _headerExtent;
     if (header != null) {
       header.layout(c.asBoxConstraints(), parentUsesSize: true);
       headerExtent =
@@ -255,12 +289,20 @@ class RenderSliverAtlasSection extends RenderSliver
       maxPaintExtent: headerExtent + bodyMaxPaintExtent,
       hasVisualOverflow: bodyOverflows || c.scrollOffset > 0,
     );
+    if (header != null) {
+      _syncStuckDuringLayout(
+        c: c,
+        headerExtent: headerExtent,
+        sectionExtent: total,
+      );
+      header.layout(c.asBoxConstraints(), parentUsesSize: true);
+      final measured =
+          c.axis == Axis.vertical ? header.size.height : header.size.width;
+      if ((measured - headerExtent).abs() > 0.001) {
+        _headerExtent = measured;
+      }
+    }
     if (placePendingTarget()) return;
-    onStuckAmount(StickyHeaderMath.stuckAmount(
-      headerPaintOffset: _headerPosition,
-      scrollOffset: c.scrollOffset,
-      headerExtent: headerExtent,
-    ));
   }
 
   bool get _headerVisible =>

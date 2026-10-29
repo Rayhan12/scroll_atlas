@@ -24,6 +24,12 @@ sealed class AtlasTarget {
   /// Item [index] of the Atlas list whose id is [sliverId].
   const factory AtlasTarget.item(String sliverId, int index) = AtlasItemTarget;
 
+  /// Item [index] of the only unnamed [SliverAtlasList] inside
+  /// `SliverAtlasSection` [sectionId] (that list's id is [sectionId]
+  /// automatically). Same as [AtlasTarget.item] when the list id matches.
+  const factory AtlasTarget.sectionItem(String sectionId, int index) =
+      AtlasItemTarget;
+
   /// The leading edge of the `SliverAtlasSection` whose id is [id]: its
   /// header lands at the alignment line.
   const factory AtlasTarget.section(String id) = AtlasSliverTarget;

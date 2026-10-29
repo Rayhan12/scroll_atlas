@@ -34,6 +34,7 @@ class AtlasListView extends StatefulWidget {
     this.padding,
     this.cacheExtent,
     this.estimator,
+    this.itemExtent,
     this.addAutomaticKeepAlives = true,
     this.addRepaintBoundaries = true,
     this.addSemanticIndexes = true,
@@ -61,6 +62,7 @@ class AtlasListView extends StatefulWidget {
     this.padding,
     this.cacheExtent,
     this.estimator,
+    this.itemExtent,
     this.addAutomaticKeepAlives = true,
     this.addRepaintBoundaries = true,
     this.addSemanticIndexes = true,
@@ -108,6 +110,10 @@ class AtlasListView extends StatefulWidget {
 
   /// Estimates unmeasured items. Defaults to a running average.
   final ExtentEstimator? estimator;
+
+  /// When set, every item uses this main axis extent with an exact
+  /// estimator. Do not combine with [estimator].
+  final double? itemExtent;
 
   /// Same as in `SliverChildBuilderDelegate`.
   final bool addAutomaticKeepAlives;
@@ -159,6 +165,7 @@ class _AtlasListViewState extends State<AtlasListView> {
       initialIndex: widget.initialIndex,
       initialAlignment: widget.initialAlignment,
       estimator: widget.estimator,
+      itemExtent: widget.itemExtent,
       delegate: SliverChildBuilderDelegate(
         _itemBuilder(),
         childCount: widget.itemCount,

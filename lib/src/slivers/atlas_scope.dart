@@ -6,24 +6,73 @@ import '../list/atlas_list_layout.dart';
 /// Makes [controller] the registry of every Atlas sliver below it, so
 /// `SliverAtlasList`, `SliverAtlasSection` and `AtlasAnchor` register by
 /// id without being handed the controller.
-class AtlasScope extends InheritedWidget {
+class AtlasScope extends StatefulWidget {
   /// Creates the scope.
   const AtlasScope({
     required this.controller,
-    required super.child,
+    required this.child,
+    this.pinnedInset = 0,
     super.key,
   });
 
   /// Controller that the slivers below register with.
   final AtlasController controller;
 
+  /// Extra pinned obstruction for [controller.pinnedInset] while this scope
+  /// is mounted.
+  final double pinnedInset;
+
+  /// The child subtree whose Atlas slivers register with [controller].
+  final Widget child;
+
   /// The controller of the nearest scope, or null.
   static AtlasLayoutRegistry? maybeOf(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<AtlasScope>()?.controller;
+      context.dependOnInheritedWidgetOfExactType<_AtlasScopeData>()?.controller;
 
   @override
-  bool updateShouldNotify(AtlasScope oldWidget) =>
-      !identical(controller, oldWidget.controller);
+  State<AtlasScope> createState() => _AtlasScopeState();
+}
+
+class _AtlasScopeState extends State<AtlasScope> {
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.pinnedInset = widget.pinnedInset;
+  }
+
+  @override
+  void didUpdateWidget(AtlasScope oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.pinnedInset != widget.pinnedInset ||
+        !identical(oldWidget.controller, widget.controller)) {
+      widget.controller.pinnedInset = widget.pinnedInset;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _AtlasScopeData(
+      controller: widget.controller,
+      pinnedInset: widget.pinnedInset,
+      child: widget.child,
+    );
+  }
+}
+
+class _AtlasScopeData extends InheritedWidget {
+  const _AtlasScopeData({
+    required this.controller,
+    required this.pinnedInset,
+    required super.child,
+  });
+
+  final AtlasController controller;
+  final double pinnedInset;
+
+  @override
+  bool updateShouldNotify(_AtlasScopeData oldWidget) =>
+      !identical(controller, oldWidget.controller) ||
+      pinnedInset != oldWidget.pinnedInset;
 }
 
 /// A [CustomScrollView] whose Atlas slivers register with [controller],
@@ -57,6 +106,7 @@ class AtlasScrollView extends StatelessWidget {
     this.reverse = false,
     this.physics,
     this.cacheExtent,
+    this.pinnedInset = 0,
     super.key,
   });
 
@@ -78,16 +128,22 @@ class AtlasScrollView extends StatelessWidget {
   /// Extent built before and after the viewport.
   final double? cacheExtent;
 
+  /// Added to [AtlasController.pinnedInset] while this view is mounted.
+  final double pinnedInset;
+
   @override
-  Widget build(BuildContext context) => AtlasScope(
-        controller: controller,
-        child: CustomScrollView(
-          controller: controller.scrollController,
-          scrollDirection: scrollDirection,
-          reverse: reverse,
-          physics: physics,
-          cacheExtent: cacheExtent,
-          slivers: slivers,
-        ),
-      );
+  Widget build(BuildContext context) {
+    return AtlasScope(
+      controller: controller,
+      pinnedInset: pinnedInset,
+      child: CustomScrollView(
+        controller: controller.scrollController,
+        scrollDirection: scrollDirection,
+        reverse: reverse,
+        physics: physics,
+        cacheExtent: cacheExtent,
+        slivers: slivers,
+      ),
+    );
+  }
 }

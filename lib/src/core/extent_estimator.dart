@@ -52,3 +52,28 @@ final class RunningAverageEstimator implements ExtentEstimator {
     _count = 0;
   }
 }
+
+/// Uses a fixed [extent] for every unmeasured item.
+///
+/// Pair with [SliverAtlasList.itemExtent] or pass to [ExtentCache] when
+/// every row has the same main axis size.
+final class FixedExtentEstimator implements ExtentEstimator {
+  /// Creates an estimator that always returns [extent].
+  FixedExtentEstimator(this.extent)
+      : assert(extent > 0, 'extent must be positive');
+
+  /// The extent of every item.
+  final double extent;
+
+  @override
+  double get estimate => extent;
+
+  @override
+  void addSample(double extent) {}
+
+  @override
+  void removeSample(double extent) {}
+
+  @override
+  void reset() {}
+}

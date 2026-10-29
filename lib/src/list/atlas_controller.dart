@@ -54,8 +54,55 @@ class AtlasController implements AtlasLayoutRegistry, IndexJumper {
 
   final IdRegistry<AtlasTargetLayout> _layouts =
       IdRegistry<AtlasTargetLayout>();
+  final Map<String, AtlasTargetLayout> _sectionLayouts =
+      <String, AtlasTargetLayout>{};
+  final Map<String, AtlasListLayout> _listLayouts = <String, AtlasListLayout>{};
   _Jump? _pendingJump;
+  _Resolved? _lastResolved;
+  int _animateGeneration = 0;
   late final AtlasPositionsNotifier _positions;
+
+  /// Extra pixels of pinned obstruction added when [respectPinned] is true,
+  /// for example a header stacked above the scroll view rather than as a
+  /// sliver. Also applies through [AtlasScope] and `AtlasScrollView`.
+  @override
+  double pinnedInset = 0;
+
+  /// Whether a sliver with [id] is registered on this controller.
+  bool hasTarget(String id) =>
+      _layouts[id] != null || _sectionLayouts.containsKey(id);
+
+  /// Ids of registered slivers in scroll order (estimated until layout).
+  List<String> get sliverIds {
+    final ids = <String>{
+      for (final id in _layouts.ids)
+        if (id != null) id,
+      ..._sectionLayouts.keys,
+    }.toList();
+    if (!scrollController.hasClients ||
+        !scrollController.position.hasContentDimensions) {
+      return ids;
+    }
+    ids.sort(
+      (a, b) => (_sectionLayouts[a] ?? _layouts[a]!)
+          .leadingOffsetOf(0)
+          .compareTo((_sectionLayouts[b] ?? _layouts[b]!).leadingOffsetOf(0)),
+    );
+    return ids;
+  }
+
+  /// When [id] is not registered, the nearest id in [sliverIds] at or
+  /// before [id] in lexicographic order, or the first id when none precede
+  /// it. Returns [id] itself when it is registered.
+  String? nearestRegisteredId(String id) {
+    if (hasTarget(id)) return id;
+    final known = sliverIds;
+    if (known.isEmpty) return null;
+    for (var i = known.length - 1; i >= 0; i--) {
+      if (known[i].compareTo(id) <= 0) return known[i];
+    }
+    return known.first;
+  }
 
   /// Whether a target sliver is attached.
   bool get isAttached =>
@@ -63,8 +110,34 @@ class AtlasController implements AtlasLayoutRegistry, IndexJumper {
 
   @override
   void attachLayout(AtlasTargetLayout layout) {
-    final error = _layouts.add(layout.id, layout);
+    final id = layout.id;
+    if (id != null && layout is! AtlasListLayout) {
+      final existing = _layouts[id];
+      if (existing is AtlasListLayout) {
+        _sectionLayouts[id] = layout;
+        _applyPendingJumpFor(layout);
+        return;
+      }
+    }
+    if (id != null && layout is AtlasListLayout) {
+      final existing = _layouts[id];
+      if (existing != null && existing is! AtlasListLayout) {
+        _sectionLayouts[id] = existing;
+        _layouts.remove(id, existing);
+      }
+    }
+    final error = _layouts.add(id, layout);
     assert(error == null, error);
+    if (id != null && layout is! AtlasListLayout) {
+      _sectionLayouts[id] = layout;
+    }
+    if (id != null && layout is AtlasListLayout) {
+      _listLayouts[id] = layout;
+    }
+    _applyPendingJumpFor(layout);
+  }
+
+  void _applyPendingJumpFor(AtlasTargetLayout layout) {
     final pending = _pendingJump;
     final resolved = pending == null ? null : _resolve(pending);
     if (resolved == null) return;
@@ -74,12 +147,33 @@ class AtlasController implements AtlasLayoutRegistry, IndexJumper {
 
   @override
   void detachLayout(AtlasTargetLayout layout) {
-    _layouts.remove(layout.id, layout);
+    final id = layout.id;
+    if (id != null && identical(_sectionLayouts[id], layout)) {
+      _sectionLayouts.remove(id);
+      _positions.schedule();
+      return;
+    }
+    if (id != null && identical(_listLayouts[id], layout)) {
+      _listLayouts.remove(id);
+    }
+    _layouts.remove(id, layout);
     _positions.schedule();
   }
 
   @override
-  void layoutChanged(AtlasTargetLayout layout) => _positions.schedule();
+  void layoutChanged(AtlasTargetLayout layout) {
+    if (layout is AtlasListLayout && !layout.layoutUpdatesEnabled) return;
+    _positions.schedule();
+  }
+
+  /// Re-anchors the last [jumpTo] on [layout], for example when a hidden tab
+  /// becomes visible again.
+  @override
+  void refreshLayout(AtlasTargetLayout layout) {
+    final last = _lastResolved;
+    if (last == null || !identical(last.layout, layout)) return;
+    layout.anchorNextLayout(last.target);
+  }
 
   /// The visible items of every attached Atlas list, each tagged with its
   /// list's id. Fractions are relative to the unobstructed
@@ -90,7 +184,8 @@ class AtlasController implements AtlasLayoutRegistry, IndexJumper {
 
   List<AtlasItemPosition> _collectPositions() => [
         for (final layout in _layouts.values)
-          if (layout is AtlasListLayout) ...layout.visiblePositions,
+          if (layout is AtlasListLayout && layout.layoutUpdatesEnabled)
+            ...layout.visiblePositions,
       ];
 
   /// Distance from the viewport's leading edge to the leading edge of the
@@ -125,13 +220,16 @@ class AtlasController implements AtlasLayoutRegistry, IndexJumper {
   /// Pass exactly one of [index] (an item of the only, or unnamed, list)
   /// and [target]. An out-of-range index fails an assertion in debug
   /// builds and is clamped in release builds. Before the target's sliver
-  /// is attached, the jump is kept and applied to its first layout.
+  /// is attached, the jump is kept and applied to its first layout. When
+  /// [fallbackToNearest] is true and [target] names a missing sliver id,
+  /// the nearest registered id at or before it in [sliverIds] is used.
   void jumpTo({
     int? index,
     AtlasTarget? target,
     double alignment = 0,
     bool respectPinned = true,
     double padding = 0,
+    bool fallbackToNearest = false,
   }) {
     final jump = _Jump.of(
       index: index,
@@ -140,12 +238,14 @@ class AtlasController implements AtlasLayoutRegistry, IndexJumper {
       respectPinned: respectPinned,
       padding: padding,
     );
-    final resolved = _resolve(jump);
+    final resolved = _resolve(jump, fallbackToNearest: fallbackToNearest);
     if (resolved == null || !scrollController.hasClients) {
       _pendingJump = jump;
       return;
     }
     _pendingJump = null;
+    _animateGeneration++;
+    _lastResolved = resolved;
     resolved.layout.anchorNextLayout(resolved.target);
     scrollController.position.jumpTo(_clamp(_pixelsFor(resolved)));
     _clampAfterLayout();
@@ -165,7 +265,9 @@ class AtlasController implements AtlasLayoutRegistry, IndexJumper {
     double padding = 0,
     Curve curve = Curves.easeInOut,
     AtlasLongDistance longDistance = AtlasLongDistance.glide,
+    bool fallbackToNearest = false,
   }) async {
+    final generation = ++_animateGeneration;
     final jump = _Jump.of(
       index: index,
       target: target,
@@ -173,21 +275,35 @@ class AtlasController implements AtlasLayoutRegistry, IndexJumper {
       respectPinned: respectPinned,
       padding: padding,
     );
-    final resolved = _resolve(jump);
-    if (resolved == null || !scrollController.hasClients) {
-      jumpTo(
-        index: index,
-        target: target,
-        alignment: alignment,
-        respectPinned: respectPinned,
-        padding: padding,
-      );
+    if (!scrollController.hasClients) {
+      _pendingJump = jump;
       return;
     }
-    final layout = resolved.layout;
+    while (_resolve(
+          jump,
+          fallbackToNearest: fallbackToNearest,
+          assertInRange: false,
+        ) ==
+        null) {
+      _pendingJump = jump;
+      await SchedulerBinding.instance.endOfFrame;
+      if (generation != _animateGeneration || !scrollController.hasClients) {
+        return;
+      }
+    }
+    _pendingJump = null;
     final position = scrollController.position;
     final viewport = position.viewportDimension;
-    double aim() => _clamp(_pixelsFor(resolved));
+
+    double aim() {
+      final resolved = _resolve(
+        jump,
+        fallbackToNearest: fallbackToNearest,
+        assertInRange: false,
+      );
+      if (resolved == null) return position.pixels;
+      return _clamp(_pixelsFor(resolved));
+    }
 
     if (longDistance == AtlasLongDistance.jumpThenAnimate) {
       final gap = aim() - position.pixels;
@@ -197,8 +313,21 @@ class AtlasController implements AtlasLayoutRegistry, IndexJumper {
     }
     if (position is! ScrollActivityDelegate) {
       await position.animateTo(aim(), duration: duration, curve: curve);
+      await SchedulerBinding.instance.endOfFrame;
+      final settled = _resolve(
+        jump,
+        fallbackToNearest: fallbackToNearest,
+        assertInRange: false,
+      );
+      if (settled != null) _settle(settled);
       return;
     }
+    final firstResolved = _resolve(
+      jump,
+      fallbackToNearest: fallbackToNearest,
+      assertInRange: false,
+    )!;
+    final layout = firstResolved.layout;
     final activity = GlideScrollActivity(
       position as ScrollActivityDelegate,
       target: aim,
@@ -217,10 +346,16 @@ class AtlasController implements AtlasLayoutRegistry, IndexJumper {
     final reached = await activity.done;
     list?.freezeEstimates(frozen: false);
     if (!reached) return;
-    // The last frame's layout has not run yet; settle after it.
     await SchedulerBinding.instance.endOfFrame;
-    if (identical(_layouts[layout.id], layout) && scrollController.hasClients) {
-      _settle(resolved);
+    final settled = _resolve(
+      jump,
+      fallbackToNearest: fallbackToNearest,
+      assertInRange: false,
+    );
+    if (settled != null &&
+        identical(_layouts[settled.layout.id], settled.layout) &&
+        scrollController.hasClients) {
+      _settle(settled);
     }
   }
 
@@ -305,26 +440,89 @@ class AtlasController implements AtlasLayoutRegistry, IndexJumper {
     jumpTo(index: index, alignment: -into / viewport);
   }
 
-  _Resolved? _resolve(_Jump jump) {
-    final layout = jump.target is AtlasIndexTarget
-        ? _primaryList
-        : _layouts[jump.target.sliverId];
+  AtlasTargetLayout? _layoutFor(AtlasTarget target) {
+    if (target is AtlasIndexTarget) return _primaryList;
+    final id = target.sliverId;
+    if (id == null) return null;
+    if (target is AtlasItemTarget) {
+      final list = _listLayouts[id];
+      if (list != null) return list;
+      for (final layout in _layouts.values) {
+        if (layout is AtlasListLayout && layout.id == id) return layout;
+      }
+    }
+    return _sectionLayouts[id] ?? _layouts[id];
+  }
+
+  _Resolved? _resolve(
+    _Jump jump, {
+    bool fallbackToNearest = false,
+    bool assertInRange = true,
+  }) {
+    final target = _targetForJump(jump, fallbackToNearest: fallbackToNearest);
+    if (target == null) return null;
+    final layout = _layoutFor(target);
     if (layout == null) return null;
     final count = layout.itemCount;
-    final index = jump.target.index;
-    assert(
-      index >= 0 && index < count,
-      'index $index is out of range for ${jump.target} with $count items.',
-    );
+    final index = target.index;
+    if (count == 0) {
+      if (index != 0) {
+        assert(
+          false,
+          'index $index is out of range for $target with 0 items.',
+        );
+        return null;
+      }
+      return _Resolved(
+        layout,
+        ScrollTarget(
+          0,
+          alignment: jump.alignment,
+          respectPinned: jump.respectPinned,
+          padding: jump.padding,
+        ),
+      );
+    }
+    if (index < 0 || index >= count) {
+      if (assertInRange) {
+        assert(
+          index >= 0 && index < count,
+          'index $index is out of range for $target with $count items.',
+        );
+      }
+      final clamped = index.clamp(0, count - 1);
+      return _Resolved(
+        layout,
+        ScrollTarget(
+          clamped,
+          alignment: jump.alignment,
+          respectPinned: jump.respectPinned,
+          padding: jump.padding,
+        ),
+      );
+    }
     return _Resolved(
       layout,
       ScrollTarget(
-        count == 0 ? 0 : index.clamp(0, count - 1),
+        index,
         alignment: jump.alignment,
         respectPinned: jump.respectPinned,
         padding: jump.padding,
       ),
     );
+  }
+
+  AtlasTarget? _targetForJump(_Jump jump, {required bool fallbackToNearest}) {
+    final target = jump.target;
+    final id = target.sliverId;
+    if (id == null || hasTarget(id)) return target;
+    if (!fallbackToNearest) return null;
+    final nearest = nearestRegisteredId(id);
+    if (nearest == null) return null;
+    if (target is AtlasItemTarget) {
+      return AtlasTarget.item(nearest, target.index);
+    }
+    return AtlasTarget.section(nearest);
   }
 
   double _pixelsFor(_Resolved resolved) {
@@ -336,7 +534,7 @@ class AtlasController implements AtlasLayoutRegistry, IndexJumper {
       viewportExtent:
           layout.viewportExtent ?? scrollController.position.viewportDimension,
       leadingObstruction:
-          (target.respectPinned ? layout.pinnedObstruction : 0) +
+          (target.respectPinned ? layout.pinnedObstruction + pinnedInset : 0) +
               target.padding,
     );
   }

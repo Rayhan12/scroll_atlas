@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/rendering.dart';
+import 'package:flutter/widgets.dart';
 
 import '../core/extent_cache.dart';
 import '../core/index_fraction.dart';
@@ -41,11 +42,13 @@ class RenderSliverAtlasList extends RenderSliverList
     AtlasLayoutRegistry? registry,
     AtlasAnchorMode anchorMode = AtlasAnchorMode.firstVisible,
     ScrollTarget? initialTarget,
+    bool layoutUpdatesEnabled = true,
   })  : _cache = cache,
         _id = id,
         _registry = registry,
         _anchorMode = anchorMode,
-        _pendingTarget = initialTarget;
+        _pendingTarget = initialTarget,
+        _layoutUpdatesEnabled = layoutUpdatesEnabled;
 
   String? _id;
 
@@ -69,6 +72,9 @@ class RenderSliverAtlasList extends RenderSliverList
   }
 
   AtlasLayoutRegistry? _registry;
+
+  @override
+  AtlasLayoutRegistry? get layoutRegistry => _registry;
 
   /// Controller that this sliver registers with while attached.
   AtlasLayoutRegistry? get registry => _registry;
@@ -100,6 +106,21 @@ class RenderSliverAtlasList extends RenderSliverList
   int _placementPasses = _maxPlacementPasses;
   _ReadingAnchor? _readingAnchor;
   double _scrollOffset = 0;
+  double _previousScrollOffset = 0;
+  bool _layoutUpdatesEnabled = true;
+
+  @override
+  bool get layoutUpdatesEnabled => _layoutUpdatesEnabled;
+
+  /// Whether visible-item notifications run after layout.
+  set layoutUpdatesEnabled(bool value) {
+    if (value == _layoutUpdatesEnabled) return;
+    _layoutUpdatesEnabled = value;
+    if (value) {
+      _registry?.refreshLayout(this);
+      markNeedsLayout();
+    }
+  }
 
   @override
   void attach(PipelineOwner owner) {
@@ -230,6 +251,7 @@ class RenderSliverAtlasList extends RenderSliverList
   @override
   void performLayout() {
     _layout();
+    if (!_layoutUpdatesEnabled) return;
     _registry?.layoutChanged(this);
   }
 
@@ -304,6 +326,7 @@ class RenderSliverAtlasList extends RenderSliverList
     }
     _useCacheForScrollExtent();
     _recordReadingAnchor();
+    _previousScrollOffset = _scrollOffset;
   }
 
   /// When item 0 is built away from offset 0 (estimates above it were
@@ -462,6 +485,10 @@ class RenderSliverAtlasList extends RenderSliverList
   }
 
   _ReadingAnchor? _liveReadingAnchor() {
+    if (_readingAnchorPaused) {
+      _readingAnchor = null;
+      return null;
+    }
     final anchor = _readingAnchor;
     if (anchor == null || _anchorMode == AtlasAnchorMode.none) return null;
     if (!identical(anchor.box.parent, this)) return null;
@@ -517,6 +544,7 @@ class RenderSliverAtlasList extends RenderSliverList
   void _recordReadingAnchor() {
     _readingAnchor = null;
     if (_anchorMode == AtlasAnchorMode.none) return;
+    if (_readingAnchorPaused) return;
     // Pinned to the start: new items at the start should push content
     // (a chat list stays at the newest message).
     if (constraints.scrollOffset <= 0.5) return;
@@ -547,6 +575,27 @@ class RenderSliverAtlasList extends RenderSliverList
       scrollExtent: estimatedEnd,
       maxPaintExtent: math.max(estimatedEnd, current.paintExtent),
     );
+  }
+
+  /// While the user is dragging, or a reversed list is scrolled within one
+  /// viewport of its minimum offset, reading-anchor corrections would fight
+  /// the finger on the way to the newest messages.
+  bool get _readingAnchorPaused {
+    final viewport = RenderAbstractViewport.maybeOf(this);
+    if (viewport is! RenderViewportBase) return false;
+    final offset = viewport.offset;
+    if (offset is! ScrollPosition) return false;
+    if (offset.isScrollingNotifier.value) return true;
+    if (offset.userScrollDirection != ScrollDirection.idle) return true;
+    if (constraints.growthDirection == GrowthDirection.reverse &&
+        _scrollOffset < _previousScrollOffset - ExtentCache.tolerance) {
+      return true;
+    }
+    if (constraints.growthDirection == GrowthDirection.reverse &&
+        constraints.scrollOffset < constraints.viewportMainAxisExtent) {
+      return true;
+    }
+    return false;
   }
 }
 

@@ -29,7 +29,6 @@ class AtlasPositionsNotifier extends ChangeNotifier
       if (_disposed) return;
       update();
     });
-    SchedulerBinding.instance.ensureVisualUpdate();
   }
 
   /// Reads the positions now and notifies when they changed.

@@ -110,7 +110,6 @@ class AtlasScrollSpy extends ChangeNotifier implements ValueListenable<int> {
       _scheduled = false;
       update();
     });
-    SchedulerBinding.instance.ensureVisualUpdate();
   }
 
   @override

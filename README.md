@@ -138,6 +138,12 @@ atlas.animateTo(
 );
 ```
 
+A list inside a section can skip its `id`. It takes the section id, so `AtlasTarget.sectionItem('K', 3)` reaches it. Sections with no items can still be jumped to. If an id might not exist, for example a day with no entries, pass `fallbackToNearest: true` to land on the nearest earlier id, or check `atlas.hasTarget(id)` first.
+
+When all items share a height, pass `itemExtent` to `SliverAtlasList.builder` or `AtlasListView.builder`.
+
+Outside `AtlasScrollView`, wrap the list in `AtlasScope(controller: atlas, pinnedInset: 56, child: ...)` so targets land below your own pinned bar or overlay.
+
 Any other sliver becomes a target when you wrap it in `AtlasAnchor`:
 
 ```dart

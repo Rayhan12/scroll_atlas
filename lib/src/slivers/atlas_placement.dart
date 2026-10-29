@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart';
 import '../core/alignment_math.dart';
 import '../core/placement_math.dart';
 import '../core/scroll_target.dart';
+import '../list/atlas_list_layout.dart';
 
 /// A render sliver that pins part of itself above one of its child slivers,
 /// such as a section with a sticky header. Lets descendants estimate what
@@ -19,6 +20,9 @@ mixin AtlasPlacement on RenderSliver {
   double? _learnedObstruction;
   double? _placementViewportExtent;
   double _placementPrecedingExtent = 0;
+
+  /// Registry passed to [alignedOffset] for [AtlasLayoutRegistry.pinnedInset].
+  AtlasLayoutRegistry? get layoutRegistry;
 
   /// Call first in `performLayout`: records the viewport, the preceding
   /// extent and, while this sliver is scrolled, what covers it.
@@ -50,13 +54,16 @@ mixin AtlasPlacement on RenderSliver {
 
   /// Distance from the viewport's leading edge to [target]'s alignment
   /// line in the current layout.
-  double alignedOffset(ScrollTarget target) =>
-      AlignmentMath.leadingEdgeInViewport(
-        alignment: target.alignment,
-        viewportExtent: constraints.viewportMainAxisExtent,
-        leadingObstruction:
-            (target.respectPinned ? placementObstruction : 0) + target.padding,
-      );
+  double alignedOffset(ScrollTarget target) {
+    final inset = target.respectPinned ? (layoutRegistry?.pinnedInset ?? 0) : 0;
+    return AlignmentMath.leadingEdgeInViewport(
+      alignment: target.alignment,
+      viewportExtent: constraints.viewportMainAxisExtent,
+      leadingObstruction:
+          (target.respectPinned ? placementObstruction + inset : 0) +
+              target.padding,
+    );
+  }
 
   /// The scroll offset at this sliver's leading edge: like
   /// `constraints.scrollOffset`, but negative while the sliver starts below

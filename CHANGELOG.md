@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.2
+
+- `SliverAtlasList.builder` and `AtlasListView.builder` take an `itemExtent`. Every item gets that height and jumps use it directly, with no estimating.
+- A `SliverAtlasSection` header now gets its `stuck` amount in the same frame the scroll moves. Before, it was one frame late.
+- Lists and scroll spies inside a hidden `IndexedStack` tab (or any subtree with tickers off) stop computing positions until the tab is shown again. Note: a shimmer or other endless animation in your own app still keeps `pumpAndSettle` from settling.
+- Jumping to an empty section now lands on its header. `jumpTo` and `animateTo` take `fallbackToNearest: true` to land on the nearest earlier registered id when the target id is missing, for example a day with no entries. `AtlasController.hasTarget` and `sliverIds` tell you which ids exist.
+- `animateTo` no longer fails or lands in the wrong place when the list reloads or grows during the animation. The target is resolved again on every frame, and a new `animateTo` cancels the previous one cleanly.
+- A `SliverAtlasList` inside a `SliverAtlasSection` no longer needs its own `id`. It takes the section id, so `AtlasTarget.sectionItem('K', 3)` jumps to item 3 of section K.
+- `AtlasScope` takes `pinnedInset`, and `AtlasController.pinnedInset` can be set directly, so targets land below a pinned bar outside `AtlasScrollView` as well.
+- Reverse lists (chat) no longer apply reading-anchor corrections while you drag near the newest item. This is meant to stop a slow drag to the newest message from stopping short. That bug did not reproduce in tests, so this change is preventive.
+
 ## 0.1.1
 
 - README: simpler sections with a screenshot per feature.

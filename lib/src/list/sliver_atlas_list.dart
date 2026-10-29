@@ -1,9 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
+import '../core/atlas_visibility.dart';
 import '../core/extent_cache.dart';
 import '../core/extent_estimator.dart';
 import '../core/scroll_target.dart';
 import '../slivers/atlas_scope.dart';
+import '../slivers/atlas_section_scope.dart';
 import 'atlas_list_layout.dart';
 import 'atlas_options.dart';
 import 'render_sliver_atlas_list.dart';
@@ -41,8 +44,14 @@ class SliverAtlasList extends StatefulWidget {
     this.initialIndex = 0,
     this.initialAlignment = 0,
     this.estimator,
+    this.itemExtent,
     super.key,
-  });
+  })  : assert(itemExtent == null || itemExtent > 0,
+            'itemExtent must be positive'),
+        assert(
+          itemExtent == null || estimator == null,
+          'Pass itemExtent or estimator, not both.',
+        );
 
   /// Creates the sliver with a builder, like `SliverList.builder`.
   SliverAtlasList.builder({
@@ -57,9 +66,25 @@ class SliverAtlasList extends StatefulWidget {
     this.initialIndex = 0,
     this.initialAlignment = 0,
     this.estimator,
+    this.itemExtent,
     super.key,
-  }) : delegate = SliverChildBuilderDelegate(
-          itemBuilder,
+  })  : assert(itemExtent == null || itemExtent > 0,
+            'itemExtent must be positive'),
+        assert(
+          itemExtent == null || estimator == null,
+          'Pass itemExtent or estimator, not both.',
+        ),
+        delegate = SliverChildBuilderDelegate(
+          itemExtent == null
+              ? itemBuilder
+              : (context, index) {
+                  final child = itemBuilder(context, index);
+                  if (child == null) return null;
+                  return ConstrainedBox(
+                    constraints: BoxConstraints.tightFor(height: itemExtent),
+                    child: child,
+                  );
+                },
           childCount: itemCount,
           findChildIndexCallback: findChildIndexCallback,
           addAutomaticKeepAlives: addAutomaticKeepAlives,
@@ -90,25 +115,127 @@ class SliverAtlasList extends StatefulWidget {
   /// Estimates unmeasured items. Defaults to a running average.
   final ExtentEstimator? estimator;
 
+  /// When set, every item is laid out with this main axis extent and the
+  /// estimator is exact. Do not combine with [estimator].
+  final double? itemExtent;
+
   @override
   State<SliverAtlasList> createState() => _SliverAtlasListState();
 }
 
 class _SliverAtlasListState extends State<SliverAtlasList> {
-  late final ExtentCache _cache = ExtentCache(estimator: widget.estimator);
+  late ExtentCache _cache;
+  String? _autoId;
+  String? _effectiveId;
+  AtlasSectionListRegistryState? _sectionRegistry;
+  ValueListenable<bool>? _tickerMode;
+  bool _layoutUpdatesEnabled = true;
 
   @override
-  Widget build(BuildContext context) => _SliverAtlasListAdaptor(
-        delegate: widget.delegate,
-        cache: _cache,
-        id: widget.id,
-        registry: widget.controller ?? AtlasScope.maybeOf(context),
-        anchorMode: widget.anchorMode,
-        initialTarget: widget.initialIndex == 0 && widget.initialAlignment == 0
-            ? null
-            : ScrollTarget(widget.initialIndex,
-                alignment: widget.initialAlignment),
+  void initState() {
+    super.initState();
+    _cache = _cacheFor(widget);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _sectionRegistry =
+        context.findAncestorStateOfType<AtlasSectionListRegistryState>();
+    _syncAutoId();
+    final next = TickerMode.getNotifier(context);
+    if (!identical(next, _tickerMode)) {
+      _tickerMode?.removeListener(_onTickerModeChanged);
+      _tickerMode = next;
+      _tickerMode!.addListener(_onTickerModeChanged);
+    }
+    _onTickerModeChanged();
+  }
+
+  void _onTickerModeChanged() {
+    final enabled = AtlasVisibility.layoutUpdatesEnabled(context);
+    if (enabled == _layoutUpdatesEnabled) return;
+    setState(() => _layoutUpdatesEnabled = enabled);
+  }
+
+  @override
+  void didUpdateWidget(SliverAtlasList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.estimator != oldWidget.estimator ||
+        widget.itemExtent != oldWidget.itemExtent) {
+      _cache = _cacheFor(widget);
+    }
+    if (widget.id != oldWidget.id) {
+      _syncAutoId();
+    }
+  }
+
+  @override
+  void dispose() {
+    _tickerMode?.removeListener(_onTickerModeChanged);
+    if (_autoId != null) {
+      _sectionRegistry?.releaseAutoListId();
+    }
+    super.dispose();
+  }
+
+  void _syncAutoId() {
+    if (widget.id != null) {
+      if (_autoId != null) {
+        _sectionRegistry?.releaseAutoListId();
+        _autoId = null;
+      }
+      _effectiveId = widget.id;
+      return;
+    }
+    if (_autoId == null && _sectionRegistry != null) {
+      _autoId = _sectionRegistry!.claimAutoListId();
+    }
+    _effectiveId = widget.id ?? _autoId;
+  }
+
+  ExtentCache _cacheFor(SliverAtlasList widget) => ExtentCache(
+        estimator: widget.itemExtent != null
+            ? FixedExtentEstimator(widget.itemExtent!)
+            : widget.estimator,
       );
+
+  @override
+  Widget build(BuildContext context) {
+    _syncAutoId();
+    var delegate = widget.delegate;
+    final extent = widget.itemExtent;
+    if (extent != null && delegate is SliverChildBuilderDelegate) {
+      final inner = delegate;
+      delegate = SliverChildBuilderDelegate(
+        (context, index) {
+          final child = inner.builder(context, index);
+          if (child == null) return null;
+          return ConstrainedBox(
+            constraints: BoxConstraints.tightFor(height: extent),
+            child: child,
+          );
+        },
+        childCount: delegate.childCount,
+        findChildIndexCallback: delegate.findChildIndexCallback,
+        addAutomaticKeepAlives: delegate.addAutomaticKeepAlives,
+        addRepaintBoundaries: delegate.addRepaintBoundaries,
+        addSemanticIndexes: delegate.addSemanticIndexes,
+      );
+    }
+    return _SliverAtlasListAdaptor(
+      delegate: delegate,
+      cache: _cache,
+      id: _effectiveId,
+      registry: widget.controller ?? AtlasScope.maybeOf(context),
+      anchorMode: widget.anchorMode,
+      layoutUpdatesEnabled: _layoutUpdatesEnabled,
+      initialTarget: widget.initialIndex == 0 && widget.initialAlignment == 0
+          ? null
+          : ScrollTarget(widget.initialIndex,
+              alignment: widget.initialAlignment),
+    );
+  }
 }
 
 class _SliverAtlasListAdaptor extends SliverMultiBoxAdaptorWidget {
@@ -118,6 +245,7 @@ class _SliverAtlasListAdaptor extends SliverMultiBoxAdaptorWidget {
     required this.id,
     required this.registry,
     required this.anchorMode,
+    required this.layoutUpdatesEnabled,
     required this.initialTarget,
   });
 
@@ -125,6 +253,7 @@ class _SliverAtlasListAdaptor extends SliverMultiBoxAdaptorWidget {
   final String? id;
   final AtlasLayoutRegistry? registry;
   final AtlasAnchorMode anchorMode;
+  final bool layoutUpdatesEnabled;
   final ScrollTarget? initialTarget;
 
   @override
@@ -139,6 +268,7 @@ class _SliverAtlasListAdaptor extends SliverMultiBoxAdaptorWidget {
         id: id,
         registry: registry,
         anchorMode: anchorMode,
+        layoutUpdatesEnabled: layoutUpdatesEnabled,
         initialTarget: initialTarget,
       );
 
@@ -151,6 +281,7 @@ class _SliverAtlasListAdaptor extends SliverMultiBoxAdaptorWidget {
       ..cache = cache
       ..id = id
       ..registry = registry
-      ..anchorMode = anchorMode;
+      ..anchorMode = anchorMode
+      ..layoutUpdatesEnabled = layoutUpdatesEnabled;
   }
 }

@@ -24,6 +24,9 @@ mixin AtlasTargetSliver
     if (attached) _registry?.attachLayout(this);
   }
 
+  @override
+  AtlasLayoutRegistry? get layoutRegistry => registry;
+
   /// Controller that this sliver registers with while attached.
   AtlasLayoutRegistry? get registry => _registry;
   set registry(AtlasLayoutRegistry? value) {

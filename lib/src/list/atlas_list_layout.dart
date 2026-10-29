@@ -47,6 +47,10 @@ abstract interface class AtlasListLayout implements AtlasTargetLayout {
   /// Built items with at least one pixel in the unobstructed viewport, in
   /// index order, as of the last layout.
   List<AtlasItemPosition> get visiblePositions;
+
+  /// When false, [AtlasLayoutRegistry.layoutChanged] and visible-item
+  /// collection skip this list (see [AtlasVisibility]).
+  bool get layoutUpdatesEnabled;
 }
 
 /// Where an Atlas sliver registers its layout so that a controller can
@@ -61,4 +65,12 @@ abstract interface class AtlasLayoutRegistry {
   /// Called after each layout of the sliver, so that listeners of what is
   /// visible can be told once the frame is done.
   void layoutChanged(AtlasTargetLayout layout);
+
+  /// Re-runs placement for the last [jumpTo] on [layout] when it becomes
+  /// active again.
+  void refreshLayout(AtlasTargetLayout layout);
+
+  /// Extra obstruction from [AtlasController.pinnedInset] or
+  /// [AtlasScope.pinnedInset], applied during placement.
+  double get pinnedInset;
 }
