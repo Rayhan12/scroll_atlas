@@ -2,7 +2,10 @@ name: scroll_atlas
 description: >-
   Precise scrolling for Flutter. Jump to any index in any sliver, below pinned
   and sticky headers, sync tabs with the scroll, and link scroll controllers.
-version: 0.2.0-dev.1
+version: 0.1.0
+homepage: https://github.com/Rayhan12/scroll_atlas
+repository: https://github.com/Rayhan12/scroll_atlas
+issue_tracker: https://github.com/Rayhan12/scroll_atlas/issues
 
 environment:
   sdk: ^3.5.0

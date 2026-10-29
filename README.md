@@ -1,10 +1,5 @@
-<!--
-  pub.dev may not resolve relative image paths. Before publishing, replace each
-  `assets/...` path with its raw.githubusercontent.com URL on the main branch.
--->
-
 <p align="center">
-  <img src="assets/hero.png" alt="scroll_atlas: scroll to any item, land below sticky headers, tabs that follow the scroll" width="100%">
+  <img src="https://raw.githubusercontent.com/Rayhan12/scroll_atlas/main/assets/hero.png" alt="scroll_atlas: scroll to any item, land below sticky headers, tabs that follow the scroll" width="100%">
 </p>
 
 <h1 align="center">scroll_atlas</h1>
@@ -20,7 +15,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license"></a>
 </p>
 
-> **Status: preview, not published yet.** All features below are built and tested. The pub badges stay empty until the first release.
+> **Status: 0.1.0, the first release.** All features below are built and tested.
 
 ## Features
 
@@ -37,7 +32,7 @@
 
 | Food menu | Contacts | Table bookings | Chat |
 |---|---|---|---|
-| <img src="assets/screenshots/food_menu.png" width="200" alt="Restaurant menu with category tabs that follow the sections"> | <img src="assets/screenshots/contacts.png" width="200" alt="Contacts with sticky letter headers and an index rail"> | <img src="assets/screenshots/table_bookings.png" width="200" alt="Table booking grid with a frozen time row and table column"> | <img src="assets/screenshots/chat.png" width="200" alt="Chat that opens at the first unread message"> |
+| <img src="https://raw.githubusercontent.com/Rayhan12/scroll_atlas/main/assets/screenshots/food_menu.png" width="200" alt="Restaurant menu with category tabs that follow the sections"> | <img src="https://raw.githubusercontent.com/Rayhan12/scroll_atlas/main/assets/screenshots/contacts.png" width="200" alt="Contacts with sticky letter headers and an index rail"> | <img src="https://raw.githubusercontent.com/Rayhan12/scroll_atlas/main/assets/screenshots/table_bookings.png" width="200" alt="Table booking grid with a frozen time row and table column"> | <img src="https://raw.githubusercontent.com/Rayhan12/scroll_atlas/main/assets/screenshots/chat.png" width="200" alt="Chat that opens at the first unread message"> |
 
 Run the demo app yourself with `cd example && flutter run`.
 
@@ -51,7 +46,7 @@ Or in `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  scroll_atlas: ^0.2.0-dev.1
+  scroll_atlas: ^0.1.0
 ```
 
 ## Quick start
@@ -198,7 +193,7 @@ Swap the dependency and the import. The class names stay the same:
 
 ```diff
 -  scrollable_positioned_list: ^0.3.8
-+  scroll_atlas: ^0.2.0-dev.1
++  scroll_atlas: ^0.1.0
 
 -import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 +import 'package:scroll_atlas/compat.dart';

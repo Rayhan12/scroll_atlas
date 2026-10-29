@@ -1,8 +1,8 @@
 # Changelog
 
-## 0.2.0-dev.1 (unreleased)
+## 0.1.0
 
-First public preview.
+First release.
 
 ### Jump to any item
 
@@ -38,4 +38,4 @@ First public preview.
 
 ### Example app
 
-- A gallery of five demos (food menu, contacts, chat, room bookings, jump lab). Each one states the problem, what breaks with a plain `ListView` and what scroll_atlas fixes, in light and dark mode.
+- A gallery of five demos (food menu, contacts, chat, table bookings, jump lab). Each one states the problem, what breaks with a plain `ListView` and what scroll_atlas fixes, in light and dark mode.
