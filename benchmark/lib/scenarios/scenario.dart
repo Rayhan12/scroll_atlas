@@ -35,7 +35,7 @@ final class PlannedScenario implements Scenario {
   @override
   final String title;
 
-  /// When it is expected, for example `a later version`.
+  /// What is needed to run it.
   final String segment;
 
   @override

@@ -17,7 +17,7 @@ import 'item_locator.dart';
 ///   position, so an index jump lands in the first frame.
 ///
 /// It reuses the framework's list layout for everything else. Experimental:
-/// not the main engine.
+/// not the engine behind `AtlasListView`.
 class RenderAtlasSliverList extends RenderSliverList implements ItemLocator {
   /// Creates the render object.
   RenderAtlasSliverList({

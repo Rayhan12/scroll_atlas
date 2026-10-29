@@ -5,7 +5,7 @@ import 'long_animate_scenario.dart';
 import 'scenario.dart';
 import 'sticky_sections_scenario.dart';
 
-/// B1 to B6. B3 compares frame times with ListView, so it only
+/// Scenarios B1 to B6. B3 compares frame times with ListView, so it only
 /// means something in profile mode on a real device.
 List<Scenario> scenarioCatalog() => <Scenario>[
   JumpStormScenario(),

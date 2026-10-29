@@ -10,7 +10,7 @@ import '../slivers/atlas_placement.dart';
 import 'atlas_list_layout.dart';
 import 'atlas_options.dart';
 
-/// The list engine.
+/// The list engine behind `AtlasListView` and `SliverAtlasList`.
 ///
 /// A [RenderSliverList] that
 ///

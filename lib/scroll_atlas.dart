@@ -1,6 +1,6 @@
 /// Precise scrolling for Flutter.
 ///
-/// The core jump engine:
+/// Jump to any item:
 ///
 /// * [AtlasListView] and [SliverAtlasList], lazy lists that jump to any
 ///   index in one frame, with no layout of the items in between.
@@ -22,7 +22,7 @@
 /// * Obstruction-aware alignment: targets land below pinned app bars and
 ///   stuck headers unless `respectPinned` is false.
 ///
-/// What is visible and navigation that follows it:
+/// What is visible, and navigation that follows it:
 ///
 /// * [AtlasController.positions], the visible items of every list with
 ///   fractional edges, told at most once per frame.
@@ -33,7 +33,8 @@
 ///
 /// * [LinkedScrollGroup], controllers that share one offset, with late
 ///   joiners and a single driver so flings never fight.
-/// * [LinkedTable], a frozen header row and first column table recipe.
+/// * [LinkedTable], a frozen header row and first column over a body that
+///   scrolls in both directions.
 library;
 
 import 'src/core/atlas_target.dart';

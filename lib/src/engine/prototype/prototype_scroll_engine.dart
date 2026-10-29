@@ -77,7 +77,7 @@ final class PrototypeScrollEngine implements IndexedScrollEngine {
     await controller.animateTo(_clamp(pixels),
         duration: duration, curve: curve);
     // Prototype landing: correct the remaining estimate error in one jump.
-    // Retargeting in flight would remove this snap.
+    // The real engine retargets in flight instead, so there is no snap.
     jumpToIndex(index, alignment: alignment);
   }
 

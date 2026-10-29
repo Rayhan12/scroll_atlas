@@ -1,4 +1,4 @@
-/// Prototype code. Not a stable API: it may change or
+/// Prototype engine kept for benchmarks. Not a stable API: it may change or
 /// disappear in any release.
 library;
 

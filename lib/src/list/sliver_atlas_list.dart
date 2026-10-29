@@ -67,8 +67,7 @@ class SliverAtlasList extends StatefulWidget {
         );
 
   /// Builds the items. Give it a `findChildIndexCallback` and keyed items
-  /// so inserted items keep their identity (needed for anchoring on
-  /// inserts).
+  /// so inserted items keep their identity.
   final SliverChildDelegate delegate;
 
   /// Id for `AtlasTarget.item(id, index)`. Unique within one

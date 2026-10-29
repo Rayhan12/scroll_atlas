@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 /// Where a jump should land: an item [index] whose leading edge is placed
 /// at [alignment] of the viewport (0 is the leading edge, 0.5 the middle).
 /// Same meaning as scrollable_positioned_list, which keeps the migration
-/// path (SA-6xx) simple.
+/// path simple.
 ///
 /// With [respectPinned] the alignment is measured inside the area
 /// below everything pinned at the final position (pinned app bars and the

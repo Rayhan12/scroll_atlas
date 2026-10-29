@@ -1,10 +1,19 @@
-# scroll_atlas_benchmark
+# scroll_atlas benchmarks
 
-Benchmark harness for scroll_atlas. Not published.
+A benchmark app that runs the same scenarios against scroll_atlas and the packages it replaces: super_sliver_list, scrollable_positioned_list, scrollview_observer and a plain `ListView`.
 
-Engines compared through one `ListEngine` interface (`lib/engines/engine_catalog.dart`): scroll_atlas (`AtlasListView`), the scroll_atlas prototype, super_sliver_list, scrollable_positioned_list, scrollview_observer and a plain `ListView`.
+## Scenarios
 
-Scenarios (`lib/scenarios/scenario_catalog.dart`): B1 jump storm, B2 long animate and B6 insert while reading are implemented. B3 (10 s fling, p90 frame time within 10% of ListView) needs a profile run on a real device, so it is not measured on the simulator or headless. B4 and B5 come later.
+| Id | Scenario | Target |
+|---|---|---|
+| B1 | Jump storm: 200 seeded random jumps in a list of variable-height items | settled in 1 frame, error <= 0.5 px, <= 30 items built |
+| B2 | 600 ms `animateToIndex` from item 1,000 to item 81,000 | error <= 0.5 px, last frame moves < 2 px (no snap) |
+| B3 | 10 s fling | p90 frame time within 10% of `ListView` (needs a profile run on a real device) |
+| B4 | 500 jumps across 26 sticky sections under a pinned app bar | no target hidden under a header, settled in 1 frame |
+| B5 | 1,000 x 50 linked table, 24 two-finger diagonal flings | members of an axis within 0.5 px on every frame |
+| B6 | Insert 20 items above the item being read | the item moves < 0.5 px |
+
+Scenarios live in `lib/scenarios/scenario_catalog.dart`.
 
 ## Run
 
@@ -16,59 +25,28 @@ dart run compare.dart <baseline.json> <current.json>
 flutter run                                        # engine picker for a manual feel check
 ```
 
-Results go to `results/<name>-<date>.json` and `.md`. Headless runs use the name `flutter_test` unless you pass `--dart-define=SA_RUN_NAME=<name>`, so a new run does not overwrite an older one.
+Results are written to `results/<name>-<date>.json` and `.md` (not committed). Pass `--dart-define=SA_RUN_NAME=<name>` so a new run does not overwrite an older one.
 
-## Prototype before and AtlasListView after (headless, debug)
+## Latest headless results (debug, host VM)
 
-The prototype is the first engine measured (`results/flutter_test-2026-10-29.md`). `AtlasListView` is (`results/flutter_test-s1-2026-10-29.md`).
+| Scenario | scroll_atlas | Target met |
+|---|---|---|
+| B1 | 100% of jumps settled in 1 frame, error 0 px, 12 items built (p50), 16 max | yes |
+| B2 | final error 0 px, last frame move 0.11 px over 40 frames | yes |
+| B4 | 0 targets covered, 500 of 500 settled in 1 frame | yes |
+| B5 | misalignment 0.00 px over 2,448 frames, 0 unsettled flings | yes |
+| B6 | item shift 0 px | yes |
 
-| scenario | target | prototype | AtlasListView | met |
-|---|---|---|---|---|
-| B1 jump storm | settled in 1 frame, error <= 0.5 px, built <= 30 | 100% in 1 frame, 0 px, built p50 12, max 16 | 100% in 1 frame, 0 px, built p50 12, max 16, wall p50 2.22 ms | yes |
-| B2 animate 80,000 items | error <= 0.5 px, last frame move < 2 px | error 0, but snaps at the end (last move n/a), fail | error 0, last move 0.11 px, 40 frames | yes |
-| B6 insert 20 above while reading | item moves < 0.5 px | not measured for the prototype; the prototype fails (item pushed off screen) | shift 0 px on the first frame and after settling | yes |
+For comparison, scrollable_positioned_list builds 36 to 44 items per jump in B1, and super_sliver_list snaps at the end of B2. Neither keeps the reading position in B6.
 
-Other engines in the headless run: super_sliver_list matches B1 but fails B2 (snap) and B6; scrollable_positioned_list passes B2 (0.44 px) but builds 36 to 44 items per jump (fails B1) and fails B6; scrollview_observer settles only 1% of jumps in 1 frame and fails B2 and B6.
+On the iPhone 17 Pro simulator (debug), B2 ends 1.73 px from the target over 23 frames with no janky frames.
 
-## Prototype before and AtlasListView after (iOS simulator, debug)
+Wall times in a debug run say nothing about a device. B3 and frame build and raster times need a profile build on a real device.
 
-iPhone 17 Pro simulator `1734C9C8-14B3-4428-AD99-B807B5B1410F`, debug mode, so wall and frame times are not comparable with a release or profile build. The prototype is `results/ios-sim-iphone17pro-debug-2026-10-29.md`, AtlasListView is `results/ios-sim-iphone17pro-debug-s1-2026-10-29.md`.
+## compat API check
 
-| scenario | target | prototype | AtlasListView | met |
-|---|---|---|---|---|
-| B1 jump storm | settled in 1 frame, error <= 0.5 px, built <= 30 | 100% in 1 frame, 0 px, built p50 12, max 16 | 100% in 1 frame, 0 px, built p50 12, max 16 | yes |
-| B2 animate 80,000 items | error <= 0.5 px, last frame move < 2 px | error 0, but snaps at the end (last move n/a), fail | error 0, last move 1.73 px, 23 frames, 0 jank frames | yes |
-| B6 insert 20 above while reading | item moves < 0.5 px | not measured for the prototype | shift 0 px on the first frame and after settling | yes |
-
-On the simulator scrollable_positioned_list also passes B2 (1.95 px) but builds 37 to 44 items per jump; super_sliver_list moves 122 px in its last B2 frame. The first two simulator attempts did not finish (a 20 minute timeout in the scrollview_observer B1 run, then a stalled app); the third finished in 8 min 46 s.
-
-Each engine is measured against its own alignment convention (`lib/measure/alignment_convention.dart`). 
-
-## B4 sticky sections (headless, debug)
-
-`results/flutter_test-s2-2026-10-29.md`. B4 jumps 500 times to seeded items across 26 sticky sections (20 to 120 items each) under a 56 px pinned bar with 40 px headers, at alignments 0, 0.25 and 0.5 of the space below the stuck header. A target is covered when its top lands under the bar or a stuck header. Targets near the end that the scroll extent clamps count as exact when they rest below that line. Only engines with a sticky section API run B4; the others are listed as not supported.
-
-| scenario | target | before | scroll_atlas | met |
-|---|---|---|---|---|
-| B4 500 jumps, 26 sticky sections | 0 covered, error <= 0.5 px in 1 frame | not available (no sections before) | 0 covered, 500 of 500 settled in 1 frame, first frame error max 0.00 px | yes |
-
-B1, B2 and B6 for `scroll_atlas` in the same run match the earlier run: B1 100% in 1 frame, 0 px, built p50 12, max 16; B2 error 0, last move 0.11 px, 40 frames; B6 shift 0 px.
-
-## B5 linked table (headless, debug)
-
-`results/flutter_test-s4-2026-10-29.md`. B5 builds a 1,000 x 50 `LinkedTable` (48 px rows, 96 px columns, frozen header row and first column) and runs 24 diagonal flings, three forward and one back. Each fling is two fingers at once, one on the header row and one on the body, with 6 moves 8 ms apart, then frames until both axes rest. On every frame, misalignment is the largest gap between two members of the same axis. Only engines with linked scrolling run B5.
-
-| scenario | target | before | scroll_atlas | met |
-|---|---|---|---|---|
-| B5 1,000 x 50 linked table, 24 diagonal flings | members of an axis within 0.5 px on every frame | not available (no linking before) | misalignment max 0.00 px over 2,448 frames, up to 31 members, 0 unsettled flings, ends at x 2,397.70 px and y 40,531.46 px | yes |
-| B5 frame wall time (host VM, debug) | p90 and p99 recorded | not available | p50 3.85 ms, p90 9.54 ms, p99 18.15 ms, max 48.91 ms | recorded |
-
-Wall times are debug-mode JIT numbers on the box's host CPU, so they say nothing about a device; device build and raster times appear only on a real device. linked_scroll_controller is not run in B5 yet. B1, B2, B4 and B6 for `scroll_atlas` in the same run match the earlier runs: B1 100% in 1 frame, 0 px, built max 16; B2 error 0, last move 0.11 px; B4 0 covered, 500 of 500 in 1 frame; B6 shift 0 px.
-
-## Compat API diff
-
-```sh
-cd benchmark && dart run tool/compat_api_diff.dart
+```
+dart run tool/compat_api_diff.dart
 ```
 
-The tool parses the public libraries of scrollable_positioned_list 0.3.8 and linked_scroll_controller 0.2.0 from the resolved package config and checks that `package:scroll_atlas/compat.dart` has every class, constructor, member and named parameter they export, following supertypes, mixins and typedefs. It exits 1 on any difference that is not in its `knownDifferences` list, and also when a listed difference no longer exists. Current result: 52 public names checked, 2 known differences (the widget fields `itemPositionsNotifier` and `scrollOffsetNotifier`), exit code 0.
+Compares the public API of `package:scroll_atlas/compat.dart` with scrollable_positioned_list and linked_scroll_controller, and fails on any difference that is not listed as known.

@@ -33,7 +33,7 @@ void main() {
 
     test(
         'the last 16 ms of a 600 ms easeInOut move under 2 px for any '
-        'distance (B2)', () {
+        'distance', () {
       const curve = Curves.easeInOut;
       for (final distance in [10.0, 1e3, 8e4 * 150, 7.5e6, 1e9]) {
         final path = GlidePath(
