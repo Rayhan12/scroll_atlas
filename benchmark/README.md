@@ -64,3 +64,11 @@ B1, B2 and B6 for `scroll_atlas` in the same run match the earlier run: B1 100% 
 | B5 frame wall time (host VM, debug) | p90 and p99 recorded | not available | p50 3.85 ms, p90 9.54 ms, p99 18.15 ms, max 48.91 ms | recorded |
 
 Wall times are debug-mode JIT numbers on the box's host CPU, so they say nothing about a device; device build and raster times appear only on a real device. linked_scroll_controller is not run in B5 yet. B1, B2, B4 and B6 for `scroll_atlas` in the same run match the earlier runs: B1 100% in 1 frame, 0 px, built max 16; B2 error 0, last move 0.11 px; B4 0 covered, 500 of 500 in 1 frame; B6 shift 0 px.
+
+## Compat API diff
+
+```sh
+cd benchmark && dart run tool/compat_api_diff.dart
+```
+
+The tool parses the public libraries of scrollable_positioned_list 0.3.8 and linked_scroll_controller 0.2.0 from the resolved package config and checks that `package:scroll_atlas/compat.dart` has every class, constructor, member and named parameter they export, following supertypes, mixins and typedefs. It exits 1 on any difference that is not in its `knownDifferences` list, and also when a listed difference no longer exists. Current result: 52 public names checked, 2 known differences (the widget fields `itemPositionsNotifier` and `scrollOffsetNotifier`), exit code 0.

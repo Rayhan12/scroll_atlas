@@ -36,6 +36,35 @@ class AtlasListView extends StatefulWidget {
     this.estimator,
     this.addAutomaticKeepAlives = true,
     this.addRepaintBoundaries = true,
+    this.addSemanticIndexes = true,
+    this.semanticChildCount,
+    super.key,
+  }) : separatorBuilder = null;
+
+  /// Creates a list with [separatorBuilder] between items.
+  ///
+  /// Indexes stay item indexes: `jumpTo(index: 7)` lands on item 7, and
+  /// positions report items only. Each separator is laid out with the
+  /// item before it, so that item's trailing edge includes it.
+  const AtlasListView.separated({
+    required this.itemCount,
+    required this.itemBuilder,
+    required IndexedWidgetBuilder this.separatorBuilder,
+    this.controller,
+    this.findChildIndexCallback,
+    this.initialIndex = 0,
+    this.initialAlignment = 0,
+    this.anchorMode = AtlasAnchorMode.firstVisible,
+    this.scrollDirection = Axis.vertical,
+    this.reverse = false,
+    this.physics,
+    this.padding,
+    this.cacheExtent,
+    this.estimator,
+    this.addAutomaticKeepAlives = true,
+    this.addRepaintBoundaries = true,
+    this.addSemanticIndexes = true,
+    this.semanticChildCount,
     super.key,
   });
 
@@ -86,6 +115,16 @@ class AtlasListView extends StatefulWidget {
   /// Same as in `SliverChildBuilderDelegate`.
   final bool addRepaintBoundaries;
 
+  /// Whether items get semantic indexes, as in [ListView].
+  final bool addSemanticIndexes;
+
+  /// Number of semantic children; defaults to [itemCount].
+  final int? semanticChildCount;
+
+  /// Builds the separator after item `index`, for every item but the last.
+  /// Null for [AtlasListView.builder].
+  final IndexedWidgetBuilder? separatorBuilder;
+
   @override
   State<AtlasListView> createState() => _AtlasListViewState();
 }
@@ -121,11 +160,12 @@ class _AtlasListViewState extends State<AtlasListView> {
       initialAlignment: widget.initialAlignment,
       estimator: widget.estimator,
       delegate: SliverChildBuilderDelegate(
-        widget.itemBuilder,
+        _itemBuilder(),
         childCount: widget.itemCount,
         findChildIndexCallback: widget.findChildIndexCallback,
         addAutomaticKeepAlives: widget.addAutomaticKeepAlives,
         addRepaintBoundaries: widget.addRepaintBoundaries,
+        addSemanticIndexes: widget.addSemanticIndexes,
       ),
     );
     final padding = widget.padding;
@@ -138,7 +178,48 @@ class _AtlasListViewState extends State<AtlasListView> {
       reverse: widget.reverse,
       physics: widget.physics,
       cacheExtent: widget.cacheExtent,
+      semanticChildCount: widget.semanticChildCount ?? widget.itemCount,
       slivers: [sliver],
     );
   }
+
+  NullableIndexedWidgetBuilder _itemBuilder() {
+    final separator = widget.separatorBuilder;
+    if (separator == null) return widget.itemBuilder;
+    return separatedItemBuilder(
+      itemBuilder: widget.itemBuilder,
+      separatorBuilder: separator,
+      itemCount: widget.itemCount,
+      scrollDirection: widget.scrollDirection,
+      reverse: widget.reverse,
+    );
+  }
+}
+
+/// Wraps [itemBuilder] so every item but the last is followed by the
+/// widget from [separatorBuilder], laid out with that item.
+///
+/// Used by [AtlasListView.separated] and the compat layer, so item
+/// indexes never change meaning.
+NullableIndexedWidgetBuilder separatedItemBuilder({
+  required NullableIndexedWidgetBuilder itemBuilder,
+  required IndexedWidgetBuilder separatorBuilder,
+  required int itemCount,
+  required Axis scrollDirection,
+  required bool reverse,
+}) {
+  final last = itemCount - 1;
+  return (BuildContext context, int index) {
+    final child = itemBuilder(context, index);
+    if (child == null || index >= last) return child;
+    // The separator follows the item in scroll order, which is screen
+    // order reversed when the list is.
+    final pair = <Widget>[child, separatorBuilder(context, index)];
+    return Flex(
+      direction: scrollDirection,
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: reverse ? pair.reversed.toList() : pair,
+    );
+  };
 }

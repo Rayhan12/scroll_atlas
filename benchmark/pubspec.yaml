@@ -37,6 +37,7 @@ dependencies:
     path: ..
   super_sliver_list: ^0.4.1
   scrollable_positioned_list: ^0.3.8
+  linked_scroll_controller: ^0.2.0
   scrollview_observer: ^1.27.3
   flutter_test:
     sdk: flutter
@@ -53,6 +54,7 @@ dev_dependencies:
     sdk: flutter
   flutter_driver:
     sdk: flutter
+  analyzer: ^6.11.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

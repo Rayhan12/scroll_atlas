@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.0 (unreleased)
+
+- `package:scroll_atlas/compat.dart` with `ScrollablePositionedList` (`.builder` and `.separated`, every 0.3.8 parameter), `ItemScrollController`, `ScrollOffsetController`, `ItemPositionsListener`, `ScrollOffsetListener` and `ItemPosition`, all backed by one `AtlasController`. `shrinkWrap` and `opacityAnimationWeights` are deprecated: the first asserts when true, the second has no effect.
+- `LinkedScrollControllerGroup` (`addAndGet`, `offset`, `jumpTo`, `animateTo`, `resetScroll`, offset listeners) on top of `LinkedScrollGroup`.
+- `AtlasListView.separated` (indexes unchanged, separators follow `reverse`), `addSemanticIndexes` and `semanticChildCount`; `AtlasController.animateBy`.
+- Compat test suite, including the old linked_scroll_controller README example.
+- `benchmark/tool/compat_api_diff.dart` compares the public API with both old packages and fails on any difference not listed as known (52 public names checked).
+- Example D5 Migration before and after: the same chat list on scrollable_positioned_list and on the compat layer, side by side.
+
 ## 0.3.0-dev.1 (unreleased)
 
 - `AtlasController.positions`, a `ValueListenable<List<AtlasItemPosition>>` of the visible items in every attached list, with `itemLeadingEdge` and `itemTrailingEdge` relative to the viewport below pinned headers (same semantics as scrollable_positioned_list's `ItemPosition`).

@@ -60,7 +60,7 @@ export 'src/engine/list_engine.dart';
 export 'src/linked/linked_scroll_group.dart';
 export 'src/linked/linked_table.dart';
 export 'src/list/atlas_controller.dart';
-export 'src/list/atlas_list_view.dart';
+export 'src/list/atlas_list_view.dart' show AtlasListView;
 export 'src/list/atlas_options.dart';
 export 'src/list/atlas_scrollbar.dart';
 export 'src/list/sliver_atlas_list.dart';

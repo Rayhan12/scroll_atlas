@@ -4,7 +4,7 @@ import 'chat/chat_screen.dart';
 import 'contacts/contacts_screen.dart';
 import 'food_menu/food_menu_screen.dart';
 import 'jump_lab/jump_lab_screen.dart';
-import 'placeholder_demo_screen.dart';
+import 'migration/migration_screen.dart';
 import 'timetable/timetable_screen.dart';
 
 /// Metadata and navigation for one demo screen in the example app.
@@ -78,7 +78,7 @@ final List<DemoScreenSpec> demoCatalog = <DemoScreenSpec>[
         'by side',
     whatToTry: 'Run both; compare behavior',
     tickets: '',
-    builder: _placeholderBuilder('D5'),
+    builder: (BuildContext context) => const MigrationScreen(),
   ),
   DemoScreenSpec(
     id: 'D6',
@@ -92,10 +92,3 @@ final List<DemoScreenSpec> demoCatalog = <DemoScreenSpec>[
     builder: (BuildContext context) => const ChatScreen(),
   ),
 ];
-
-WidgetBuilder _placeholderBuilder(String id) {
-  return (BuildContext context) {
-    final spec = demoCatalog.firstWhere((DemoScreenSpec s) => s.id == id);
-    return PlaceholderDemoScreen(spec: spec);
-  };
-}

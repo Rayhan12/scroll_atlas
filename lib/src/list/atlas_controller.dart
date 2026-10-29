@@ -210,6 +210,21 @@ class AtlasController implements AtlasLayoutRegistry, IndexJumper {
     }
   }
 
+  /// Animates the scroll offset by [offset] pixels from where it is now,
+  /// positive towards the end. Unlike [animateTo] it targets no item.
+  Future<void> animateBy({
+    required double offset,
+    required Duration duration,
+    Curve curve = Curves.linear,
+  }) {
+    final position = scrollController.position;
+    return position.animateTo(
+      position.pixels + offset,
+      duration: duration,
+      curve: curve,
+    );
+  }
+
   /// Removes any sub-pixel difference left after an animation, for example
   /// when the last frame's layout measured items above the target.
   void _settle(_Resolved resolved) {
