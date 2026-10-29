@@ -15,7 +15,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT license"></a>
 </p>
 
-> **Status: 0.1.0, the first release.** All features below are built and tested.
+> **Status: 0.1.1.** All features below are built and tested.
 
 ## Features
 
@@ -46,7 +46,7 @@ Or in `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  scroll_atlas: ^0.1.0
+  scroll_atlas: ^0.1.1
 ```
 
 ## Quick start
