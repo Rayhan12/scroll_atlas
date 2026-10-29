@@ -53,6 +53,10 @@ dependencies:
 
 ### A list you can jump around in
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Rayhan12/scroll_atlas/main/assets/screenshots/jump_lab.png" width="280" alt="Jump lab: jump to any of 100,000 items in one frame">
+</p>
+
 ```dart
 import 'package:flutter/material.dart';
 import 'package:scroll_atlas/scroll_atlas.dart';
@@ -104,6 +108,10 @@ class _MessagesState extends State<Messages> {
 
 ### Sections with sticky headers in a CustomScrollView
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Rayhan12/scroll_atlas/main/assets/screenshots/contacts.png" width="280" alt="Contacts with sticky letter headers and an index rail">
+</p>
+
 ```dart
 AtlasScrollView(
   controller: atlas,
@@ -140,6 +148,10 @@ atlas.jumpTo(target: const AtlasTarget.sliver('footer'));
 
 ### Tabs that follow the scroll
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Rayhan12/scroll_atlas/main/assets/screenshots/food_menu.png" width="280" alt="Restaurant menu with category tabs that follow the sections">
+</p>
+
 ```dart
 AtlasTabBar(
   controller: atlas,
@@ -151,6 +163,10 @@ AtlasTabBar(
 Put it in a pinned `SliverAppBar.bottom`. A tap locks the scroll spy, animates to the section and moves the indicator once; dragging during the animation hands control back to the spy. A short last section becomes active at the end of the scroll. For your own UI, use `AtlasScrollSpy(controller: atlas, sectionIds: ids)`, a `ValueListenable<int>` of the active section.
 
 ### Which items are visible
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Rayhan12/scroll_atlas/main/assets/screenshots/chat.png" width="280" alt="Chat that opens at the first unread message and tracks what is on screen">
+</p>
 
 ```dart
 ValueListenableBuilder<List<AtlasItemPosition>>(
@@ -165,6 +181,10 @@ ValueListenableBuilder<List<AtlasItemPosition>>(
 Each `AtlasItemPosition` has the sliver id, the index and `itemLeadingEdge` and `itemTrailingEdge` as fractions of the viewport below pinned headers, like `ItemPosition` in scrollable_positioned_list. The list updates at most once per frame. `firstFullyVisible` and `mostVisible` cover the usual needs.
 
 ### Linked scrollables
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Rayhan12/scroll_atlas/main/assets/screenshots/table_bookings.png" width="280" alt="Table booking grid with a frozen time row and table column">
+</p>
 
 ```dart
 final group = LinkedScrollGroup();
@@ -187,62 +207,13 @@ LinkedTable(
 )
 ```
 
-## Migrating from scrollable_positioned_list
-
-Swap the dependency and the import. The class names stay the same:
-
-```diff
--  scrollable_positioned_list: ^0.3.8
-+  scroll_atlas: ^0.1.0
-
--import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
-+import 'package:scroll_atlas/compat.dart';
-```
-
-`LinkedScrollControllerGroup` from linked_scroll_controller is in `compat.dart` too. Two differences: `scrollTo` glides to the target instead of cross fading, and `shrinkWrap: true` is not supported.
-
-## How it compares
-
-Facts read from the pub.dev and GitHub APIs on 2026-10-28.
-
-| Package | Latest version | Last published | Downloads (30 days) | Likes | Repository |
-|---|---|---|---|---|---|
-| [scrollable_positioned_list](https://pub.dev/packages/scrollable_positioned_list) | 0.3.8 | 2023-05-08 | 679,109 | 1,995 | google/flutter.widgets, archived, BSD-3-Clause |
-| [linked_scroll_controller](https://pub.dev/packages/linked_scroll_controller) | 0.2.0 | 2021-05-05 | 158,099 | 335 | google/flutter.widgets, archived |
-| [scroll_to_index](https://pub.dev/packages/scroll_to_index) | 3.0.1 | 2022-05-18 | 474,878 | 821 | quire-io/scroll-to-index |
-| [scrollview_observer](https://pub.dev/packages/scrollview_observer) | 1.27.3 | 2026-09-14 | 137,517 | 325 | fluttercandies/flutter_scrollview_observer, MIT |
-| [super_sliver_list](https://pub.dev/packages/super_sliver_list) | 0.4.1 | 2024-03-26 | 112,647 | 301 | superlistapp/super_sliver_list, MIT |
-| scroll_atlas | not published | | | | MIT |
-
-What the other packages' own docs say:
-
-- scrollview_observer is actively maintained and covers ListView, SliverList, GridView and mixed CustomScrollViews. For items with dynamic heights it recommends a large `cacheExtent` to reduce "page turning" during a jump, in a CustomScrollView each target sliver is identified by its `BuildContext`, and the height of a pinned `SliverAppBar` at the target is returned from a callback you provide ([wiki](https://github.com/fluttercandies/flutter_scrollview_observer/wiki)).
-- super_sliver_list jumps to items that are not built yet, inside slivers, and its README notes that scrollable_positioned_list cannot be combined with other slivers ([README](https://github.com/superlistapp/super_sliver_list)).
-
-scroll_atlas aims to combine id-based targets, sticky-aware alignment, scroll-synced tabs, linked controllers and a drop-in layer for the two archived Google packages in one maintained package. Speed comparisons will appear here only after they are measured with the benchmark app on real devices, with links to the raw results.
-
-Measured so far (headless test runs and an iOS simulator in debug mode, not real devices yet): `AtlasListView` lands every jump in one frame within 0.5 px while building at most 16 items, animates across 80,000 items without a snap at the end (last frame move 0.11 px headless, 1.73 px on the iOS simulator), and keeps the item you are reading still when 20 items are inserted above it. Across 26 sticky sections under a pinned bar, 500 of 500 jumps land in one frame with no target hidden under a header. A 1,000 x 50 `LinkedTable` keeps its headers and body within 0 px of each other on every frame of 24 two-finger diagonal flings. Details: [`benchmark/README.md`](benchmark/README.md).
-
 ## Example app
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Rayhan12/scroll_atlas/main/assets/screenshots/gallery.png" width="280" alt="The example app gallery of five demos">
+</p>
+
 The `example/` app opens on a gallery of five demos: a food menu with tabs that follow the sections, contacts A to Z with sticky headers, a chat that opens at the first unread message, a restaurant table booking grid with a frozen time row and table column, and a jump lab with 100,000 items. Each demo says what breaks with a plain `ListView` and what scroll_atlas fixes.
-
-## Contributing
-
-Contributions are welcome.
-
-1. Open an issue first for anything larger than a small fix, so we can agree on the API.
-2. Fork, then create a branch from `main`.
-3. Run the checks before you push:
-   ```sh
-   dart format --set-exit-if-changed .
-   flutter analyze
-   flutter test
-   ```
-4. Add tests for new behavior. Scroll positions are checked to within 0.5 px.
-5. Open a pull request and describe how you tested it (device, Flutter version).
-
-Bug reports are most useful with your Flutter version, the device, and a minimal reproduction.
 
 ## License
 
